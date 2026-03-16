@@ -4,7 +4,18 @@ import { db, auth } from '../firebase';
 import { GoogleGenAI } from '@google/genai';
 import { ClipboardCheck, Sparkles, Loader2, Save } from 'lucide-react';
 
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+let aiInstance: GoogleGenAI | null = null;
+
+function getAI() {
+  if (!aiInstance) {
+    let apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey && typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) {
+      apiKey = process.env.GEMINI_API_KEY;
+    }
+    aiInstance = new GoogleGenAI({ apiKey: apiKey || 'missing-api-key' });
+  }
+  return aiInstance;
+}
 
 function EvaluationRow({ student, selectedApsa, evaluations, onGenerateComment, isGenerating }: any) {
   const evalData = evaluations.find((e: any) => e.studentId === student.id && e.apsa === selectedApsa);
@@ -95,6 +106,7 @@ export function Evaluations() {
     setIsGenerating(student.id);
 
     try {
+      const ai = getAI();
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: `En tant que professeur d'EPS, rédige une appréciation courte (1 phrase) et constructive pour l'élève ${student.firstName} ${student.lastName} qui a obtenu la note de ${grade}/${maxGrade} en ${selectedApsa}. Le ton doit être encourageant et professionnel.`,
