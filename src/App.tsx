@@ -12,6 +12,7 @@ import { ClipboardCheck, Loader2 } from 'lucide-react';
 export default function App() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -22,11 +23,13 @@ export default function App() {
   }, []);
 
   const handleLogin = async () => {
+    setLoginError(null);
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
+      setLoginError(error.message || "Une erreur est survenue lors de la connexion.");
     }
   };
 
@@ -60,6 +63,18 @@ export default function App() {
             </svg>
             Continuer avec Google
           </button>
+          
+          {loginError && (
+            <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-xl text-sm text-left border border-red-100">
+              <p className="font-bold mb-1">Erreur de connexion :</p>
+              <p className="break-words">{loginError}</p>
+              {loginError.includes('auth/unauthorized-domain') && (
+                <p className="mt-2 text-xs">
+                  <strong>Solution :</strong> Vous devez ajouter ce domaine (ais-dev-snvhxale3iijrztumsv7wh-246031715412.europe-west2.run.app) dans la liste des "Domaines autorisés" dans les paramètres d'authentification de votre console Firebase.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
