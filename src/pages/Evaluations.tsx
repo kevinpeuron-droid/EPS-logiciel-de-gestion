@@ -4,7 +4,67 @@ import { db, auth } from '../firebase';
 import { GoogleGenAI } from '@google/genai';
 import { ClipboardCheck, Sparkles, Loader2, Save } from 'lucide-react';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+
+function EvaluationRow({ student, selectedApsa, evaluations, onGenerateComment, isGenerating }: any) {
+  const evalData = evaluations.find((e: any) => e.studentId === student.id && e.apsa === selectedApsa);
+  const [grade, setGrade] = useState<string>(evalData?.grade?.toString() || '');
+  const maxGrade = 20;
+
+  useEffect(() => {
+    setGrade(evalData?.grade?.toString() || '');
+  }, [evalData]);
+
+  return (
+    <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
+            {student.firstName[0]}{student.lastName[0]}
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900">{student.firstName} {student.lastName}</h3>
+            <p className="text-xs text-slate-500 uppercase tracking-wider">Classe: {student.classGroupId}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min="0"
+            max={maxGrade}
+            value={grade}
+            onChange={(e) => setGrade(e.target.value)}
+            placeholder="Note"
+            className="w-20 p-2 text-center border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-bold text-lg"
+          />
+          <span className="text-slate-400 font-bold">/ {maxGrade}</span>
+        </div>
+      </div>
+
+      <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 relative">
+        {evalData?.comment ? (
+          <p className="text-sm text-slate-700 italic">"{evalData.comment}"</p>
+        ) : (
+          <div className="flex justify-between items-center">
+            <p className="text-sm text-slate-400 italic">Aucune appréciation générée.</p>
+            <button
+              onClick={() => onGenerateComment(student, Number(grade), maxGrade)}
+              disabled={!grade || isGenerating === student.id}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+            >
+              {isGenerating === student.id ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+              Générer avec l'IA
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function Evaluations() {
   const [students, setStudents] = useState<any[]>([]);
@@ -80,61 +140,16 @@ export function Evaluations() {
       </div>
 
       <div className="space-y-4">
-        {students.map((student) => {
-          const evalData = evaluations.find(e => e.studentId === student.id && e.apsa === selectedApsa);
-          const [grade, setGrade] = useState<string>(evalData?.grade?.toString() || '');
-          const maxGrade = 20;
-
-          return (
-            <div key={student.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
-                    {student.firstName[0]}{student.lastName[0]}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900">{student.firstName} {student.lastName}</h3>
-                    <p className="text-xs text-slate-500 uppercase tracking-wider">Classe: {student.classGroupId}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min="0"
-                    max={maxGrade}
-                    value={grade}
-                    onChange={(e) => setGrade(e.target.value)}
-                    placeholder="Note"
-                    className="w-20 p-2 text-center border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-bold text-lg"
-                  />
-                  <span className="text-slate-400 font-bold">/ {maxGrade}</span>
-                </div>
-              </div>
-
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 relative">
-                {evalData?.comment ? (
-                  <p className="text-sm text-slate-700 italic">"{evalData.comment}"</p>
-                ) : (
-                  <div className="flex justify-between items-center">
-                    <p className="text-sm text-slate-400 italic">Aucune appréciation générée.</p>
-                    <button
-                      onClick={() => handleGenerateComment(student, Number(grade), maxGrade)}
-                      disabled={!grade || isGenerating === student.id}
-                      className="flex items-center gap-2 px-4 py-2 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
-                    >
-                      {isGenerating === student.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Sparkles className="w-4 h-4" />
-                      )}
-                      Générer avec l'IA
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        {students.map((student) => (
+          <EvaluationRow
+            key={student.id}
+            student={student}
+            selectedApsa={selectedApsa}
+            evaluations={evaluations}
+            onGenerateComment={handleGenerateComment}
+            isGenerating={isGenerating}
+          />
+        ))}
         
         {students.length === 0 && (
           <div className="text-center py-12 text-slate-500 bg-white rounded-2xl border border-slate-200 border-dashed">
