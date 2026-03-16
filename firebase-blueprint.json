@@ -1,0 +1,115 @@
+{
+  "entities": {
+    "Student": {
+      "title": "Student",
+      "description": "A student in an EPS class",
+      "type": "object",
+      "properties": {
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "classGroupId": { "type": "string" },
+        "healthAlerts": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "e.g., Asthma, PAI, Allergies"
+        },
+        "dispensationStart": { "type": "string", "format": "date-time" },
+        "dispensationEnd": { "type": "string", "format": "date-time" },
+        "dispensationReason": { "type": "string" },
+        "teacherId": { "type": "string" }
+      },
+      "required": ["firstName", "lastName", "classGroupId", "teacherId"]
+    },
+    "ClassGroup": {
+      "title": "Class Group",
+      "description": "A class of students (e.g., 6ème A)",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "teacherId": { "type": "string" }
+      },
+      "required": ["name", "teacherId"]
+    },
+    "Session": {
+      "title": "Session",
+      "description": "An EPS session/lesson",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "apsa": { "type": "string" },
+        "classGroupId": { "type": "string" },
+        "pdfUrls": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "teacherId": { "type": "string" }
+      },
+      "required": ["title", "date", "apsa", "classGroupId", "teacherId"]
+    },
+    "Evaluation": {
+      "title": "Evaluation",
+      "description": "A student's evaluation for an APSA",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "apsa": { "type": "string" },
+        "grade": { "type": "number" },
+        "maxGrade": { "type": "number" },
+        "comment": { "type": "string" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "teacherId": { "type": "string" }
+      },
+      "required": ["studentId", "apsa", "teacherId"]
+    },
+    "Facility": {
+      "title": "Facility",
+      "description": "A sports facility (e.g., Gymnase, Stade)",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "teacherId": { "type": "string" }
+      },
+      "required": ["name", "teacherId"]
+    },
+    "FacilityUnavailableSlot": {
+      "title": "Facility Unavailable Slot",
+      "description": "Time slot when a facility is unavailable",
+      "type": "object",
+      "properties": {
+        "facilityId": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "reason": { "type": "string" },
+        "teacherId": { "type": "string" }
+      },
+      "required": ["facilityId", "startTime", "endTime", "teacherId"]
+    }
+  },
+  "firestore": {
+    "/students/{studentId}": {
+      "schema": { "$ref": "#/entities/Student" },
+      "description": "Students collection"
+    },
+    "/classGroups/{classId}": {
+      "schema": { "$ref": "#/entities/ClassGroup" },
+      "description": "Class groups collection"
+    },
+    "/sessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/Session" },
+      "description": "Sessions collection"
+    },
+    "/evaluations/{evalId}": {
+      "schema": { "$ref": "#/entities/Evaluation" },
+      "description": "Evaluations collection"
+    },
+    "/facilities/{facilityId}": {
+      "schema": { "$ref": "#/entities/Facility" },
+      "description": "Facilities collection"
+    },
+    "/facilityUnavailableSlots/{slotId}": {
+      "schema": { "$ref": "#/entities/FacilityUnavailableSlot" },
+      "description": "Unavailable slots for facilities"
+    }
+  }
+}

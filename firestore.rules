@@ -1,0 +1,222 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: students
+    // Document ID: auto-generated
+    // Fields:
+    //   - firstName: string (required, < 50 chars)
+    //   - lastName: string (required, < 50 chars)
+    //   - classGroupId: string (required, < 50 chars)
+    //   - healthAlerts: list of strings (optional, each < 50 chars, max 10 items)
+    //   - dispensationStart: string (optional, ISO 8601 date)
+    //   - dispensationEnd: string (optional, ISO 8601 date)
+    //   - dispensationReason: string (optional, < 200 chars)
+    //   - teacherId: string (required, immutable)
+    //
+    // Collection: classGroups
+    // Document ID: auto-generated
+    // Fields:
+    //   - name: string (required, < 50 chars)
+    //   - teacherId: string (required, immutable)
+    //
+    // Collection: sessions
+    // Document ID: auto-generated
+    // Fields:
+    //   - title: string (required, < 100 chars)
+    //   - date: string (required, ISO 8601 date)
+    //   - apsa: string (required, < 50 chars)
+    //   - classGroupId: string (required, < 50 chars)
+    //   - pdfUrls: list of strings (optional, each < 500 chars, max 10 items)
+    //   - teacherId: string (required, immutable)
+    //
+    // Collection: evaluations
+    // Document ID: auto-generated
+    // Fields:
+    //   - studentId: string (required, < 50 chars)
+    //   - apsa: string (required, < 50 chars)
+    //   - grade: number (optional, >= 0)
+    //   - maxGrade: number (optional, > 0)
+    //   - comment: string (optional, < 1000 chars)
+    //   - deadline: string (optional, ISO 8601 date)
+    //   - teacherId: string (required, immutable)
+    //
+    // Collection: facilities
+    // Document ID: auto-generated
+    // Fields:
+    //   - name: string (required, < 100 chars)
+    //   - teacherId: string (required, immutable)
+    //
+    // Collection: facilityUnavailableSlots
+    // Document ID: auto-generated
+    // Fields:
+    //   - facilityId: string (required, < 50 chars)
+    //   - startTime: string (required, ISO 8601 date)
+    //   - endTime: string (required, ISO 8601 date)
+    //   - reason: string (optional, < 200 chars)
+    //   - teacherId: string (required, immutable)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(teacherId) {
+      return isAuthenticated() && request.auth.uid == teacherId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.teacherId;
+    }
+
+    function teacherIdUnchanged() {
+      return !('teacherId' in request.resource.data) ||
+        request.resource.data.teacherId == request.auth.uid;
+    }
+
+    function teacherIdNotModified() {
+      return !('teacherId' in request.resource.data) ||
+        request.resource.data.teacherId == resource.data.teacherId;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function validStringLength(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+        request.resource.data[field].size() >= minLen &&
+        request.resource.data[field].size() <= maxLen;
+    }
+
+    function isValidOptionalString(field, minLen, maxLen) {
+      return !(field in request.resource.data) ||
+             (request.resource.data[field] is string &&
+              request.resource.data[field].size() >= minLen &&
+              request.resource.data[field].size() <= maxLen);
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string &&
+        dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    function isValidOptionalDateString(field) {
+      return !(field in request.resource.data) || isValidDateString(request.resource.data[field]);
+    }
+
+    function isValidStringList(listField, maxItems, maxStrLen) {
+      return !(listField in request.resource.data) ||
+             (request.resource.data[listField] is list &&
+              request.resource.data[listField].size() <= maxItems);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidStudent() {
+      return hasRequiredFields(['firstName', 'lastName', 'classGroupId', 'teacherId']) &&
+             validStringLength('firstName', 1, 50) &&
+             validStringLength('lastName', 1, 50) &&
+             validStringLength('classGroupId', 1, 50) &&
+             isValidStringList('healthAlerts', 10, 50) &&
+             isValidOptionalDateString('dispensationStart') &&
+             isValidOptionalDateString('dispensationEnd') &&
+             isValidOptionalString('dispensationReason', 0, 200);
+    }
+
+    function isValidClassGroup() {
+      return hasRequiredFields(['name', 'teacherId']) &&
+             validStringLength('name', 1, 50);
+    }
+
+    function isValidSession() {
+      return hasRequiredFields(['title', 'date', 'apsa', 'classGroupId', 'teacherId']) &&
+             validStringLength('title', 1, 100) &&
+             isValidDateString(request.resource.data.date) &&
+             validStringLength('apsa', 1, 50) &&
+             validStringLength('classGroupId', 1, 50) &&
+             isValidStringList('pdfUrls', 10, 500);
+    }
+
+    function isValidEvaluation() {
+      return hasRequiredFields(['studentId', 'apsa', 'teacherId']) &&
+             validStringLength('studentId', 1, 50) &&
+             validStringLength('apsa', 1, 50) &&
+             (!('grade' in request.resource.data) || (request.resource.data.grade is number && request.resource.data.grade >= 0)) &&
+             (!('maxGrade' in request.resource.data) || (request.resource.data.maxGrade is number && request.resource.data.maxGrade > 0)) &&
+             isValidOptionalString('comment', 0, 1000) &&
+             isValidOptionalDateString('deadline');
+    }
+
+    function isValidFacility() {
+      return hasRequiredFields(['name', 'teacherId']) &&
+             validStringLength('name', 1, 100);
+    }
+
+    function isValidFacilityUnavailableSlot() {
+      return hasRequiredFields(['facilityId', 'startTime', 'endTime', 'teacherId']) &&
+             validStringLength('facilityId', 1, 50) &&
+             isValidDateString(request.resource.data.startTime) &&
+             isValidDateString(request.resource.data.endTime) &&
+             isValidOptionalString('reason', 0, 200);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /students/{studentId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidStudent() && teacherIdUnchanged();
+      allow update: if isDocOwner() && isValidStudent() && teacherIdNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /classGroups/{classId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidClassGroup() && teacherIdUnchanged();
+      allow update: if isDocOwner() && isValidClassGroup() && teacherIdNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /sessions/{sessionId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidSession() && teacherIdUnchanged();
+      allow update: if isDocOwner() && isValidSession() && teacherIdNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /evaluations/{evalId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidEvaluation() && teacherIdUnchanged();
+      allow update: if isDocOwner() && isValidEvaluation() && teacherIdNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /facilities/{facilityId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidFacility() && teacherIdUnchanged();
+      allow update: if isDocOwner() && isValidFacility() && teacherIdNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /facilityUnavailableSlots/{slotId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidFacilityUnavailableSlot() && teacherIdUnchanged();
+      allow update: if isDocOwner() && isValidFacilityUnavailableSlot() && teacherIdNotModified();
+      allow delete: if isDocOwner();
+    }
+  }
+}
