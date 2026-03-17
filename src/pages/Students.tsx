@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, serverTimestamp, where } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { StudentHealthBadge } from '../components/StudentHealthBadge';
 import { Users, Plus, UserPlus, Search } from 'lucide-react';
@@ -18,7 +18,10 @@ export function Students() {
 
   useEffect(() => {
     if (!auth.currentUser) return;
-    const q = query(collection(db, 'students'));
+    const q = query(
+      collection(db, 'students'),
+      where('teacherId', '==', auth.currentUser.uid)
+    );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setStudents(data);

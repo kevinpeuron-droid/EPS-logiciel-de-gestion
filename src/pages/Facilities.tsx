@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, serverTimestamp, where } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { Map, Plus, CalendarX, Clock } from 'lucide-react';
 import { format } from 'date-fns';
@@ -20,12 +20,18 @@ export function Facilities() {
 
   useEffect(() => {
     if (!auth.currentUser) return;
-    const qFac = query(collection(db, 'facilities'));
+    const qFac = query(
+      collection(db, 'facilities'),
+      where('teacherId', '==', auth.currentUser.uid)
+    );
     const unsubFac = onSnapshot(qFac, (snapshot) => {
       setFacilities(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
 
-    const qSlots = query(collection(db, 'facilityUnavailableSlots'));
+    const qSlots = query(
+      collection(db, 'facilityUnavailableSlots'),
+      where('teacherId', '==', auth.currentUser.uid)
+    );
     const unsubSlots = onSnapshot(qSlots, (snapshot) => {
       setUnavailableSlots(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });

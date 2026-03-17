@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, serverTimestamp, where } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { GoogleGenAI } from '@google/genai';
 import { ClipboardCheck, Sparkles, Loader2, Save } from 'lucide-react';
@@ -85,12 +85,18 @@ export function Evaluations() {
 
   useEffect(() => {
     if (!auth.currentUser) return;
-    const qStudents = query(collection(db, 'students'));
+    const qStudents = query(
+      collection(db, 'students'),
+      where('teacherId', '==', auth.currentUser.uid)
+    );
     const unsubStudents = onSnapshot(qStudents, (snapshot) => {
       setStudents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
 
-    const qEvals = query(collection(db, 'evaluations'));
+    const qEvals = query(
+      collection(db, 'evaluations'),
+      where('teacherId', '==', auth.currentUser.uid)
+    );
     const unsubEvals = onSnapshot(qEvals, (snapshot) => {
       setEvaluations(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, serverTimestamp, where } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { FileUpload } from '../components/FileUpload';
 import { Plus, FileText, Calendar as CalendarIcon, MapPin, Clock } from 'lucide-react';
@@ -19,7 +19,10 @@ export function Sessions() {
 
   useEffect(() => {
     if (!auth.currentUser) return;
-    const q = query(collection(db, 'sessions'));
+    const q = query(
+      collection(db, 'sessions'),
+      where('teacherId', '==', auth.currentUser.uid)
+    );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setSessions(data);
