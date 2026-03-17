@@ -80,7 +80,8 @@ function EvaluationRow({ student, selectedApsa, evaluations, onGenerateComment, 
 export function Evaluations() {
   const [students, setStudents] = useState<any[]>([]);
   const [evaluations, setEvaluations] = useState<any[]>([]);
-  const [selectedApsa, setSelectedApsa] = useState('Acrosport');
+  const [sports, setSports] = useState<any[]>([]);
+  const [selectedApsa, setSelectedApsa] = useState('');
   const [isGenerating, setIsGenerating] = useState<string | null>(null);
 
   useEffect(() => {
@@ -101,9 +102,24 @@ export function Evaluations() {
       setEvaluations(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
 
+    const qSports = query(
+      collection(db, 'sports'),
+      where('teacherId', '==', auth.currentUser.uid)
+    );
+    const unsubSports = onSnapshot(qSports, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      data.sort((a, b) => a.name.localeCompare(b.name));
+      setSports(data);
+      setSelectedApsa(prev => {
+        if (!prev && data.length > 0) return data[0].name;
+        return prev;
+      });
+    });
+
     return () => {
       unsubStudents();
       unsubEvals();
+      unsubSports();
     };
   }, []);
 
@@ -150,10 +166,10 @@ export function Evaluations() {
           value={selectedApsa}
           onChange={(e) => setSelectedApsa(e.target.value)}
         >
-          <option value="Acrosport">Acrosport</option>
-          <option value="Badminton">Badminton</option>
-          <option value="Demi-fond">Demi-fond</option>
-          <option value="Natation">Natation</option>
+          {sports.length === 0 && <option value="" disabled>Aucun sport configuré</option>}
+          {sports.map(sport => (
+            <option key={sport.id} value={sport.name}>{sport.name}</option>
+          ))}
         </select>
       </div>
 

@@ -8,6 +8,7 @@ import { fr } from 'date-fns/locale';
 
 export function Sessions() {
   const [sessions, setSessions] = useState<any[]>([]);
+  const [sports, setSports] = useState<any[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [newSession, setNewSession] = useState({
     title: '',
@@ -27,7 +28,21 @@ export function Sessions() {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setSessions(data);
     });
-    return () => unsubscribe();
+
+    const qSports = query(
+      collection(db, 'sports'),
+      where('teacherId', '==', auth.currentUser.uid)
+    );
+    const unsubscribeSports = onSnapshot(qSports, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      data.sort((a, b) => a.name.localeCompare(b.name));
+      setSports(data);
+    });
+
+    return () => {
+      unsubscribe();
+      unsubscribeSports();
+    };
   }, []);
 
   const handleAddSession = async (e: React.FormEvent) => {
@@ -94,10 +109,10 @@ export function Sessions() {
                   onChange={(e) => setNewSession({ ...newSession, apsa: e.target.value })}
                 >
                   <option value="">Sélectionner...</option>
-                  <option value="Acrosport">Acrosport</option>
-                  <option value="Badminton">Badminton</option>
-                  <option value="Demi-fond">Demi-fond</option>
-                  <option value="Natation">Natation</option>
+                  {sports.map(sport => (
+                    <option key={sport.id} value={sport.name}>{sport.name}</option>
+                  ))}
+                  {sports.length === 0 && <option value="" disabled>Aucun sport configuré</option>}
                 </select>
               </div>
             </div>

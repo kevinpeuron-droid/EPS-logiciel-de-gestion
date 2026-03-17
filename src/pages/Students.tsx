@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, onSnapshot, addDoc, serverTimestamp, where } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { StudentHealthBadge } from '../components/StudentHealthBadge';
-import { Users, Plus, UserPlus, Search } from 'lucide-react';
+import { CsvImportWizard } from '../components/CsvImportWizard';
+import { Users, Plus, UserPlus, Search, Upload } from 'lucide-react';
 
 export function Students() {
   const [students, setStudents] = useState<any[]>([]);
   const [isAdding, setIsAdding] = useState(false);
+  const [isImportingCsv, setIsImportingCsv] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [newStudent, setNewStudent] = useState({
     firstName: '',
@@ -58,12 +60,22 @@ export function Students() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">Élèves</h2>
-        <button
-          onClick={() => setIsAdding(!isAdding)}
-          className="bg-indigo-600 text-white p-3 rounded-full shadow-md hover:bg-indigo-700 transition-colors active:scale-95"
-        >
-          <UserPlus className="w-6 h-6" />
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => { setIsImportingCsv(!isImportingCsv); setIsAdding(false); }}
+            className="bg-white text-slate-700 border border-slate-200 p-3 rounded-full shadow-sm hover:bg-slate-50 transition-colors active:scale-95"
+            title="Importer depuis un CSV"
+          >
+            <Upload className="w-6 h-6" />
+          </button>
+          <button
+            onClick={() => { setIsAdding(!isAdding); setIsImportingCsv(false); }}
+            className="bg-indigo-600 text-white p-3 rounded-full shadow-md hover:bg-indigo-700 transition-colors active:scale-95"
+            title="Ajouter un élève manuellement"
+          >
+            <UserPlus className="w-6 h-6" />
+          </button>
+        </div>
       </div>
 
       <div className="relative">
@@ -76,6 +88,13 @@ export function Students() {
           className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
         />
       </div>
+
+      {isImportingCsv && (
+        <CsvImportWizard 
+          onComplete={() => setIsImportingCsv(false)} 
+          onCancel={() => setIsImportingCsv(false)} 
+        />
+      )}
 
       {isAdding && (
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 animate-in fade-in slide-in-from-top-4">

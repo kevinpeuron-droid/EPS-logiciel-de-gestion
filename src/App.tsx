@@ -7,6 +7,7 @@ import { Sessions } from './pages/Sessions';
 import { Students } from './pages/Students';
 import { Evaluations } from './pages/Evaluations';
 import { Facilities } from './pages/Facilities';
+import { Sports } from './pages/Sports';
 import { ClipboardCheck, Loader2 } from 'lucide-react';
 
 export default function App() {
@@ -87,9 +88,9 @@ export default function App() {
                     <li>
                       Copiez ce texte exact :
                       <div className="flex items-center gap-2 mt-1 mb-1">
-                        <code className="bg-slate-100 px-2 py-1 rounded text-xs select-all">ais-dev-snvhxale3iijrztumsv7wh-246031715412.europe-west2.run.app</code>
+                        <code className="bg-slate-100 px-2 py-1 rounded text-xs select-all">{window.location.hostname}</code>
                         <button 
-                          onClick={() => navigator.clipboard.writeText('ais-dev-snvhxale3iijrztumsv7wh-246031715412.europe-west2.run.app')}
+                          onClick={() => navigator.clipboard.writeText(window.location.hostname)}
                           className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded text-xs font-medium transition-colors"
                         >
                           Copier
@@ -98,6 +99,9 @@ export default function App() {
                     </li>
                     <li>Cliquez sur <strong>Ajouter</strong>, puis revenez ici et réessayez.</li>
                   </ol>
+                  <div className="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
+                    <p><strong>Note :</strong> Si le domaine est déjà ajouté et que ça bloque toujours, cela peut venir de votre navigateur (Safari, Brave) ou d'un bloqueur de pub qui empêche les cookies tiers. Essayez sur Chrome ou désactivez votre bloqueur.</p>
+                  </div>
                 </div>
               )}
             </div>
@@ -115,6 +119,7 @@ export default function App() {
           <Route path="students" element={<Students />} />
           <Route path="evaluations" element={<Evaluations />} />
           <Route path="facilities" element={<Facilities />} />
+          <Route path="sports" element={<Sports />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

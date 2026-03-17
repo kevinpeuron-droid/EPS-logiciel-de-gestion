@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom';
-import { Users, Calendar, ClipboardCheck, Map, Settings } from 'lucide-react';
+import { Users, Calendar, ClipboardCheck, Map, Settings, Activity } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function Layout() {
@@ -7,6 +7,7 @@ export function Layout() {
     { to: '/', icon: Calendar, label: 'Séances' },
     { to: '/students', icon: Users, label: 'Élèves' },
     { to: '/evaluations', icon: ClipboardCheck, label: 'Évals' },
+    { to: '/sports', icon: Activity, label: 'Sports' },
     { to: '/facilities', icon: Map, label: 'Lieux' },
   ];
 
