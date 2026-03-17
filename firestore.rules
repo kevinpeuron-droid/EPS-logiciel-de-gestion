@@ -108,7 +108,7 @@ service cloud.firestore {
 
     function isValidDateString(dateStr) {
       return dateStr is string &&
-        dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+        (dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$") || dateStr.matches("^\\d{4}-\\d{2}-\\d{2}$"));
     }
 
     function isValidOptionalDateString(field) {
@@ -138,7 +138,8 @@ service cloud.firestore {
 
     function isValidClassGroup() {
       return hasRequiredFields(['name', 'teacherId']) &&
-             validStringLength('name', 1, 50);
+             validStringLength('name', 1, 50) &&
+             isValidOptionalString('scheduleJson', 0, 2000);
     }
 
     function isValidSession() {
@@ -173,9 +174,21 @@ service cloud.firestore {
              isValidOptionalString('reason', 0, 200);
     }
 
+    function isValidSport() {
+      return hasRequiredFields(['name', 'teacherId']) &&
+             validStringLength('name', 1, 50);
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
+
+    match /sports/{sportId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidSport() && teacherIdUnchanged();
+      allow update: if isDocOwner() && isValidSport() && teacherIdNotModified();
+      allow delete: if isDocOwner();
+    }
 
     match /students/{studentId} {
       allow read: if isDocOwner();

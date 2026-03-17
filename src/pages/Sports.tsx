@@ -30,11 +30,17 @@ export function Sports() {
     if (!auth.currentUser || !newSportName.trim()) return;
 
     try {
-      await addDoc(collection(db, 'sports'), {
-        name: newSportName.trim(),
-        teacherId: auth.currentUser.uid,
-        createdAt: serverTimestamp()
-      });
+      const sportsToAdd = newSportName.split(/[,;\n]/).map(s => s.trim()).filter(Boolean);
+      
+      const promises = sportsToAdd.map(sportName => 
+        addDoc(collection(db, 'sports'), {
+          name: sportName,
+          teacherId: auth.currentUser!.uid,
+          createdAt: serverTimestamp()
+        })
+      );
+
+      await Promise.all(promises);
       setIsAdding(false);
       setNewSportName('');
     } catch (error) {
@@ -91,14 +97,14 @@ export function Sports() {
           <h3 className="text-lg font-semibold mb-4 text-slate-800">Nouveau Sport</h3>
           <form onSubmit={handleAddSport} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Nom du sport</label>
-              <input
-                type="text"
+              <label className="block text-sm font-medium text-slate-700 mb-1">Nom du sport (ou plusieurs séparés par des virgules)</label>
+              <textarea
                 required
                 className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 value={newSportName}
                 onChange={(e) => setNewSportName(e.target.value)}
-                placeholder="Ex: Basket-ball, Gymnastique..."
+                placeholder="Ex: Basket-ball, Gymnastique, Natation..."
+                rows={3}
               />
             </div>
             <div className="flex justify-end gap-3 pt-2">

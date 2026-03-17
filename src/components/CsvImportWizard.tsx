@@ -16,12 +16,44 @@ export function CsvImportWizard({ onComplete, onCancel }: CsvImportWizardProps) 
   const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [targetClass, setTargetClass] = useState('');
   const [mapping, setMapping] = useState({
-    firstName: '',
-    lastName: '',
-    classGroupId: '',
+    fullName: '',
     healthAlerts: ''
   });
+
+  const parseFullName = (fullName: string) => {
+    if (!fullName) return { firstName: '', lastName: '' };
+    
+    let lastNameParts: string[] = [];
+    let firstNameParts: string[] = [];
+    const words = fullName.trim().split(/\s+/);
+    
+    for (const word of words) {
+      // Un mot est considéré comme un nom de famille s'il est entièrement en majuscules
+      // et contient au moins une lettre (pour ignorer la ponctuation seule)
+      if (word === word.toUpperCase() && /[A-ZÀ-ÖØ-Þ]/.test(word.toUpperCase())) {
+        lastNameParts.push(word);
+      } else {
+        firstNameParts.push(word);
+      }
+    }
+
+    // Fallbacks si tout est allé du même côté
+    if (lastNameParts.length === 0 && words.length > 0) {
+      lastNameParts = [words[0]];
+      firstNameParts = words.slice(1);
+    }
+    if (firstNameParts.length === 0 && words.length > 1) {
+      firstNameParts = [words[words.length - 1]];
+      lastNameParts = words.slice(0, -1);
+    }
+
+    return {
+      firstName: firstNameParts.join(' '),
+      lastName: lastNameParts.join(' ')
+    };
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -44,9 +76,7 @@ export function CsvImportWizard({ onComplete, onCancel }: CsvImportWizardProps) 
           
           // Auto-guess mapping
           const guessMapping = {
-            firstName: results.meta.fields.find(f => f.toLowerCase().includes('prénom') || f.toLowerCase().includes('prenom') || f.toLowerCase() === 'first name') || '',
-            lastName: results.meta.fields.find(f => f.toLowerCase().includes('nom') || f.toLowerCase() === 'last name') || '',
-            classGroupId: results.meta.fields.find(f => f.toLowerCase().includes('classe') || f.toLowerCase() === 'class') || '',
+            fullName: results.meta.fields.find(f => f.toLowerCase().includes('nom') || f.toLowerCase().includes('élève') || f.toLowerCase().includes('eleve')) || '',
             healthAlerts: results.meta.fields.find(f => f.toLowerCase().includes('santé') || f.toLowerCase().includes('sante') || f.toLowerCase().includes('alerte')) || ''
           };
           setMapping(guessMapping);
@@ -60,8 +90,8 @@ export function CsvImportWizard({ onComplete, onCancel }: CsvImportWizardProps) 
 
   const handleImport = async () => {
     if (!auth.currentUser) return;
-    if (!mapping.firstName || !mapping.lastName || !mapping.classGroupId) {
-      setError("Veuillez mapper au moins le prénom, le nom et la classe.");
+    if (!mapping.fullName || !targetClass.trim()) {
+      setError("Veuillez mapper la colonne du nom et définir la classe.");
       return;
     }
 
@@ -73,12 +103,13 @@ export function CsvImportWizard({ onComplete, onCancel }: CsvImportWizardProps) 
         const healthAlertsStr = mapping.healthAlerts ? row[mapping.healthAlerts] : '';
         const healthAlerts = healthAlertsStr ? healthAlertsStr.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
 
+        const { firstName, lastName } = parseFullName(row[mapping.fullName] || '');
+
         return addDoc(collection(db, 'students'), {
-          firstName: row[mapping.firstName],
-          lastName: row[mapping.lastName],
-          classGroupId: row[mapping.classGroupId],
+          firstName: firstName || '-',
+          lastName: lastName || '-',
+          classGroupId: targetClass.trim(),
           healthAlerts: healthAlerts,
-          dispensationEnd: null,
           teacherId: auth.currentUser!.uid,
           createdAt: serverTimestamp()
         });
@@ -117,7 +148,7 @@ export function CsvImportWizard({ onComplete, onCancel }: CsvImportWizardProps) 
           <label htmlFor="csv-upload" className="cursor-pointer flex flex-col items-center">
             <FileText className="w-12 h-12 text-slate-400 mb-3" />
             <span className="text-slate-700 font-medium mb-1">Cliquez pour sélectionner un fichier CSV</span>
-            <span className="text-slate-500 text-sm">Le fichier doit contenir des colonnes (ex: Nom, Prénom, Classe)</span>
+            <span className="text-slate-500 text-sm">Le fichier doit contenir au moins une colonne avec le Nom et Prénom</span>
           </label>
         </div>
       ) : (
@@ -139,52 +170,38 @@ export function CsvImportWizard({ onComplete, onCancel }: CsvImportWizardProps) 
           </div>
 
           <div className="space-y-4">
-            <h4 className="font-medium text-slate-800">Associer les colonnes :</h4>
+            <h4 className="font-medium text-slate-800">Configuration de l'import :</h4>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-sm font-medium text-slate-700 flex items-center gap-1">
-                  Prénom <span className="text-red-500">*</span>
+                  Classe cible <span className="text-red-500">*</span>
                 </label>
-                <select 
-                  value={mapping.firstName}
-                  onChange={(e) => setMapping({...mapping, firstName: e.target.value})}
+                <input 
+                  type="text"
+                  value={targetClass}
+                  onChange={(e) => setTargetClass(e.target.value)}
+                  placeholder="Ex: 6A, 5B..."
                   className="w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="">-- Sélectionner --</option>
-                  {headers.map(h => <option key={h} value={h}>{h}</option>)}
-                </select>
-              </div>
-              
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-slate-700 flex items-center gap-1">
-                  Nom <span className="text-red-500">*</span>
-                </label>
-                <select 
-                  value={mapping.lastName}
-                  onChange={(e) => setMapping({...mapping, lastName: e.target.value})}
-                  className="w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="">-- Sélectionner --</option>
-                  {headers.map(h => <option key={h} value={h}>{h}</option>)}
-                </select>
+                />
               </div>
 
               <div className="space-y-1">
                 <label className="text-sm font-medium text-slate-700 flex items-center gap-1">
-                  Classe <span className="text-red-500">*</span>
+                  Colonne Nom & Prénom <span className="text-red-500">*</span>
                 </label>
                 <select 
-                  value={mapping.classGroupId}
-                  onChange={(e) => setMapping({...mapping, classGroupId: e.target.value})}
+                  value={mapping.fullName}
+                  onChange={(e) => setMapping({...mapping, fullName: e.target.value})}
                   className="w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="">-- Sélectionner --</option>
                   {headers.map(h => <option key={h} value={h}>{h}</option>)}
                 </select>
+                <p className="text-xs text-slate-500 mt-1">Le nom (en majuscules) sera séparé du prénom automatiquement.</p>
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1 md:col-span-2">
                 <label className="text-sm font-medium text-slate-700">
                   Alertes Santé (Optionnel)
                 </label>
@@ -200,28 +217,31 @@ export function CsvImportWizard({ onComplete, onCancel }: CsvImportWizardProps) 
             </div>
           </div>
 
-          {data.length > 0 && mapping.firstName && mapping.lastName && mapping.classGroupId && (
+          {data.length > 0 && mapping.fullName && targetClass && (
             <div className="mt-6">
               <h4 className="font-medium text-slate-800 mb-2">Aperçu (3 premières lignes) :</h4>
               <div className="overflow-x-auto border border-slate-200 rounded-lg">
                 <table className="w-full text-sm text-left">
                   <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
                     <tr>
-                      <th className="px-4 py-2">Prénom</th>
-                      <th className="px-4 py-2">Nom</th>
+                      <th className="px-4 py-2">Nom extrait</th>
+                      <th className="px-4 py-2">Prénom extrait</th>
                       <th className="px-4 py-2">Classe</th>
                       <th className="px-4 py-2">Santé</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {data.slice(0, 3).map((row, i) => (
-                      <tr key={i}>
-                        <td className="px-4 py-2">{row[mapping.firstName]}</td>
-                        <td className="px-4 py-2">{row[mapping.lastName]}</td>
-                        <td className="px-4 py-2">{row[mapping.classGroupId]}</td>
-                        <td className="px-4 py-2">{mapping.healthAlerts ? row[mapping.healthAlerts] : '-'}</td>
-                      </tr>
-                    ))}
+                    {data.slice(0, 3).map((row, i) => {
+                      const { firstName, lastName } = parseFullName(row[mapping.fullName] || '');
+                      return (
+                        <tr key={i}>
+                          <td className="px-4 py-2 font-medium">{lastName}</td>
+                          <td className="px-4 py-2">{firstName}</td>
+                          <td className="px-4 py-2">{targetClass}</td>
+                          <td className="px-4 py-2">{mapping.healthAlerts ? row[mapping.healthAlerts] : '-'}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -246,7 +266,7 @@ export function CsvImportWizard({ onComplete, onCancel }: CsvImportWizardProps) 
             </button>
             <button
               onClick={handleImport}
-              disabled={isImporting || !mapping.firstName || !mapping.lastName || !mapping.classGroupId}
+              disabled={isImporting || !mapping.fullName || !targetClass.trim()}
               className="px-5 py-2.5 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {isImporting ? (

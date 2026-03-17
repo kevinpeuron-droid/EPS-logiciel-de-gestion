@@ -84,9 +84,23 @@
         "teacherId": { "type": "string" }
       },
       "required": ["facilityId", "startTime", "endTime", "teacherId"]
+    },
+    "Sport": {
+      "title": "Sport",
+      "description": "A sport (APSA)",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "teacherId": { "type": "string" }
+      },
+      "required": ["name", "teacherId"]
     }
   },
   "firestore": {
+    "/sports/{sportId}": {
+      "schema": { "$ref": "#/entities/Sport" },
+      "description": "Sports collection"
+    },
     "/students/{studentId}": {
       "schema": { "$ref": "#/entities/Student" },
       "description": "Students collection"
