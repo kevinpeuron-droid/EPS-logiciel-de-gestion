@@ -69,9 +69,36 @@ export default function App() {
               <p className="font-bold mb-1">Erreur de connexion :</p>
               <p className="break-words">{loginError}</p>
               {loginError.includes('auth/unauthorized-domain') && (
-                <p className="mt-2 text-xs">
-                  <strong>Solution :</strong> Vous devez ajouter ce domaine (ais-dev-snvhxale3iijrztumsv7wh-246031715412.europe-west2.run.app) dans la liste des "Domaines autorisés" dans les paramètres d'authentification de votre console Firebase.
-                </p>
+                <div className="mt-3 p-3 bg-white rounded-lg border border-red-200 shadow-sm">
+                  <p className="font-bold text-slate-800 mb-2">🚨 Action requise dans Firebase</p>
+                  <p className="text-slate-600 mb-2">Google bloque la connexion car l'adresse de cette application a changé. Vous devez l'autoriser :</p>
+                  <ol className="list-decimal pl-4 space-y-2 text-slate-700">
+                    <li>
+                      <a 
+                        href="https://console.firebase.google.com/project/gen-lang-client-0769442824/authentication/settings" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-indigo-600 font-bold hover:underline"
+                      >
+                        Ouvrez vos paramètres Firebase (cliquez ici)
+                      </a>
+                    </li>
+                    <li>Descendez jusqu'à <strong>Domaines autorisés</strong> et cliquez sur <strong>Ajouter un domaine</strong>.</li>
+                    <li>
+                      Copiez ce texte exact :
+                      <div className="flex items-center gap-2 mt-1 mb-1">
+                        <code className="bg-slate-100 px-2 py-1 rounded text-xs select-all">ais-dev-snvhxale3iijrztumsv7wh-246031715412.europe-west2.run.app</code>
+                        <button 
+                          onClick={() => navigator.clipboard.writeText('ais-dev-snvhxale3iijrztumsv7wh-246031715412.europe-west2.run.app')}
+                          className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1 rounded text-xs font-medium transition-colors"
+                        >
+                          Copier
+                        </button>
+                      </div>
+                    </li>
+                    <li>Cliquez sur <strong>Ajouter</strong>, puis revenez ici et réessayez.</li>
+                  </ol>
+                </div>
               )}
             </div>
           )}
