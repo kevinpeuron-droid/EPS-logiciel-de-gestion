@@ -213,15 +213,18 @@ export function Sessions() {
         if (item.dayOfWeek === currentDayName) {
           // Check date bounds if they exist
           let isWithinBounds = false;
+          let matchedPeriod: any = null;
+
           if (item.periods && item.periods.length > 0) {
             const currentWeek = getISOWeek(selectedDate);
-            isWithinBounds = item.periods.some((p: any) => {
+            matchedPeriod = item.periods.find((p: any) => {
               if (p.startWeek <= p.endWeek) {
                 return currentWeek >= p.startWeek && currentWeek <= p.endWeek;
               } else {
                 return currentWeek >= p.startWeek || currentWeek <= p.endWeek;
               }
             });
+            if (matchedPeriod) isWithinBounds = true;
           } else if (item.startWeek && item.endWeek) {
             const currentWeek = getISOWeek(selectedDate);
             if (item.startWeek <= item.endWeek) {
@@ -249,8 +252,8 @@ export function Sessions() {
               className: cg.name,
               startTime: item.startTime,
               endTime: item.endTime,
-              apsa: item.apsa,
-              facilityId: item.facilityId,
+              apsa: matchedPeriod?.apsa || item.apsa,
+              facilityId: matchedPeriod?.facilityId || item.facilityId,
               existingSession
             });
           }

@@ -3,12 +3,14 @@ import { collection, query, onSnapshot, addDoc, setDoc, doc, serverTimestamp, wh
 import { db, auth } from '../firebase';
 import { StudentHealthBadge } from '../components/StudentHealthBadge';
 import { CsvImportWizard } from '../components/CsvImportWizard';
-import { Users, Plus, UserPlus, Search, Upload, Folder, Calendar, ChevronLeft, Settings, Trash2 } from 'lucide-react';
+import { Users, Plus, UserPlus, Search, Upload, Folder, Calendar, ChevronLeft, Settings, Trash2, Clock, MapPin } from 'lucide-react';
 import { formatFirstName, formatLastName } from '../lib/utils';
 
 interface SchedulePeriod {
   startWeek: number;
   endWeek: number;
+  apsa?: string;
+  facilityId?: string;
 }
 
 interface ClassSchedule {
@@ -176,10 +178,16 @@ export function Students() {
         const migrated = parsed.map((item: any) => {
           if (!item.periods) {
             if (item.startWeek && item.endWeek) {
-              item.periods = [{ startWeek: item.startWeek, endWeek: item.endWeek }];
+              item.periods = [{ startWeek: item.startWeek, endWeek: item.endWeek, apsa: item.apsa, facilityId: item.facilityId }];
             } else {
-              item.periods = [{ startWeek: 1, endWeek: 52 }];
+              item.periods = [{ startWeek: 1, endWeek: 52, apsa: item.apsa, facilityId: item.facilityId }];
             }
+          } else {
+            item.periods = item.periods.map((p: any) => ({
+              ...p,
+              apsa: p.apsa || item.apsa,
+              facilityId: p.facilityId || item.facilityId
+            }));
           }
           return item;
         });
@@ -222,7 +230,12 @@ export function Students() {
       dayOfWeek: 'Lundi', 
       startTime: '08:00',
       endTime: '10:00',
-      periods: [{ startWeek: 1, endWeek: 52 }],
+      periods: [{ 
+        startWeek: 1, 
+        endWeek: 52,
+        apsa: sports[0]?.name || '',
+        facilityId: facilities[0]?.id || ''
+      }],
       apsa: sports[0]?.name || '',
       facilityId: facilities[0]?.id || ''
     }]);
@@ -238,12 +251,17 @@ export function Students() {
     const newSchedule = [...scheduleForm];
     const item = { ...newSchedule[index] };
     item.periods = [...(item.periods || [])];
-    item.periods.push({ startWeek: 1, endWeek: 52 });
+    item.periods.push({ 
+      startWeek: 1, 
+      endWeek: 52,
+      apsa: sports[0]?.name || '',
+      facilityId: facilities[0]?.id || ''
+    });
     newSchedule[index] = item;
     setScheduleForm(newSchedule);
   };
 
-  const updateSchedulePeriod = (itemIndex: number, periodIndex: number, field: keyof SchedulePeriod, value: number) => {
+  const updateSchedulePeriod = (itemIndex: number, periodIndex: number, field: keyof SchedulePeriod, value: any) => {
     const newSchedule = [...scheduleForm];
     const item = { ...newSchedule[itemIndex] };
     if (item.periods) {
@@ -522,22 +540,64 @@ export function Students() {
                         return `${day}/${month}/${year}`;
                       };
                       
-                      const periodDisplay = item.periods && item.periods.length > 0
-                        ? item.periods.map((p: any) => `S${p.startWeek}-S${p.endWeek}`).join(', ')
-                        : (item.startDate && item.endDate
-                          ? `Du ${formatDate(item.startDate)} au ${formatDate(item.endDate)}`
-                          : (item.period || (item.startWeek && item.endWeek ? `Semaines ${item.startWeek} à ${item.endWeek}` : '')));
+                      const hasPeriods = item.periods && item.periods.length > 0;
                       
                       return (
                         <li key={idx} className="flex flex-col text-sm border-b border-zinc-100 pb-3 last:border-0 last:pb-0">
-                          <div className="flex items-center justify-between">
-                            <span className="font-semibold text-zinc-800">{item.dayOfWeek} {timeDisplay}</span>
-                            <span className="text-primary-700 bg-primary-50 px-2.5 py-1 rounded-lg border border-primary-100 font-medium text-xs">{item.apsa}</span>
+                          <div className="flex items-center justify-between font-medium text-zinc-900 mb-2">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4 text-primary-500" />
+                              {item.dayOfWeek}
+                            </div>
+                            <span className="text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded-md text-xs">
+                              {item.startTime || '--:--'} - {item.endTime || '--:--'}
+                            </span>
                           </div>
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="text-xs font-medium text-zinc-500">{periodDisplay}</span>
-                            {facility && <span className="text-xs text-primary-600 font-medium bg-white px-2 py-0.5 rounded-md border border-zinc-200">{facility.name}</span>}
-                          </div>
+                          
+                          {hasPeriods ? (
+                            <div className="flex flex-col gap-1.5">
+                              {item.periods.map((p: any, pIdx: number) => {
+                                const pFacility = facilities.find(f => f.id === p.facilityId);
+                                return (
+                                  <div key={pIdx} className="flex flex-col gap-1 bg-zinc-50 p-2 rounded-lg border border-zinc-100">
+                                    <div className="text-xs font-bold text-zinc-700 flex items-center gap-1.5">
+                                      <Clock className="w-3.5 h-3.5 text-primary-500" />
+                                      Semaines {p.startWeek} à {p.endWeek}
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 text-xs text-zinc-500">
+                                      <div className="flex items-center gap-1.5">
+                                        <MapPin className="w-3.5 h-3.5" />
+                                        <span className="truncate">{pFacility ? pFacility.name : 'Lieu non défini'}</span>
+                                      </div>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="w-3.5 h-3.5 flex items-center justify-center bg-zinc-200 text-zinc-600 rounded-sm font-bold text-[8px]">A</span>
+                                        <span className="truncate">{p.apsa || 'APSA non définie'}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <>
+                              <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-zinc-500">
+                                <div className="flex items-center gap-1.5">
+                                  <MapPin className="w-3.5 h-3.5" />
+                                  <span className="truncate">{facility ? facility.name : 'Lieu non défini'}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="w-3.5 h-3.5 flex items-center justify-center bg-zinc-200 text-zinc-600 rounded-sm font-bold text-[8px]">A</span>
+                                  <span className="truncate">{item.apsa || 'APSA non définie'}</span>
+                                </div>
+                              </div>
+                              {(item.startWeek && item.endWeek) && (
+                                <div className="mt-1.5 text-xs text-zinc-400 flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span>Semaines {item.startWeek} à {item.endWeek}</span>
+                                </div>
+                              )}
+                            </>
+                          )}
                         </li>
                       );
                     })}
@@ -617,74 +677,75 @@ export function Students() {
                       </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pr-10">
-                    <div className="md:col-span-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider">Périodes</label>
-                        <button 
-                          type="button" 
-                          onClick={() => addPeriodToItem(index)} 
-                          className="text-xs bg-primary-50 text-primary-600 hover:bg-primary-100 px-2 py-1 rounded-md font-bold transition-colors flex items-center gap-1"
-                        >
-                          <Plus className="w-3 h-3" /> Ajouter
-                        </button>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        {item.periods?.map((period, pIdx) => (
-                          <div key={pIdx} className="flex items-center gap-2">
-                            <span className="text-zinc-400 text-xs font-medium w-8">De S</span>
+                  <div className="pr-10">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider">Périodes, Lieux et APSA</label>
+                      <button 
+                        type="button" 
+                        onClick={() => addPeriodToItem(index)} 
+                        className="text-xs bg-primary-50 text-primary-600 hover:bg-primary-100 px-3 py-1.5 rounded-lg font-bold transition-colors flex items-center gap-1.5"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Ajouter une période
+                      </button>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      {item.periods?.map((period, pIdx) => (
+                        <div key={pIdx} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 bg-white rounded-xl border border-zinc-200 shadow-sm relative">
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-zinc-500 text-xs font-bold">S</span>
                             <input
                               type="number"
                               min="1"
                               max="52"
                               value={period.startWeek || ''}
                               onChange={(e) => updateSchedulePeriod(index, pIdx, 'startWeek', parseInt(e.target.value, 10))}
-                              className="w-full p-2 border border-zinc-300 rounded-lg bg-white text-sm font-medium shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                              className="w-16 p-2 border border-zinc-300 rounded-lg bg-zinc-50 text-sm font-medium focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-center"
                             />
-                            <span className="text-zinc-400 text-xs font-medium w-8 text-center">à S</span>
+                            <span className="text-zinc-400 text-xs font-medium">à</span>
                             <input
                               type="number"
                               min="1"
                               max="52"
                               value={period.endWeek || ''}
                               onChange={(e) => updateSchedulePeriod(index, pIdx, 'endWeek', parseInt(e.target.value, 10))}
-                              className="w-full p-2 border border-zinc-300 rounded-lg bg-white text-sm font-medium shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                              className="w-16 p-2 border border-zinc-300 rounded-lg bg-zinc-50 text-sm font-medium focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-center"
                             />
-                            {item.periods!.length > 1 && (
-                              <button 
-                                type="button" 
-                                onClick={() => removePeriodFromItem(index, pIdx)} 
-                                className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors shrink-0"
-                                title="Supprimer cette période"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            )}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Lieu</label>
-                      <select
-                        value={item.facilityId || ''}
-                        onChange={(e) => updateScheduleItem(index, 'facilityId', e.target.value)}
-                        className="w-full p-2.5 border border-zinc-300 rounded-xl bg-white text-sm font-medium shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      >
-                        <option value="">Sélectionner...</option>
-                        {facilities.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Sport (APSA)</label>
-                      <select
-                        value={item.apsa}
-                        onChange={(e) => updateScheduleItem(index, 'apsa', e.target.value)}
-                        className="w-full p-2.5 border border-zinc-300 rounded-xl bg-white text-sm font-medium shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      >
-                        <option value="">Sélectionner...</option>
-                        {sports.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-                      </select>
+                          
+                          <select
+                            value={period.facilityId || ''}
+                            onChange={(e) => updateSchedulePeriod(index, pIdx, 'facilityId', e.target.value)}
+                            className="w-full sm:w-auto flex-1 p-2 border border-zinc-300 rounded-lg bg-white text-sm font-medium focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                          >
+                            <option value="">Lieu...</option>
+                            {facilities.map(f => (
+                              <option key={f.id} value={f.id}>{f.name}</option>
+                            ))}
+                          </select>
+
+                          <select
+                            value={period.apsa || ''}
+                            onChange={(e) => updateSchedulePeriod(index, pIdx, 'apsa', e.target.value)}
+                            className="w-full sm:w-auto flex-1 p-2 border border-zinc-300 rounded-lg bg-white text-sm font-medium focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                          >
+                            <option value="">APSA...</option>
+                            {sports.map(s => (
+                              <option key={s.id} value={s.name}>{s.name}</option>
+                            ))}
+                          </select>
+
+                          {item.periods!.length > 1 && (
+                            <button 
+                              type="button" 
+                              onClick={() => removePeriodFromItem(index, pIdx)} 
+                              className="absolute -right-3 -top-3 sm:static sm:right-auto sm:top-auto p-1.5 bg-white sm:bg-transparent border border-zinc-200 sm:border-transparent text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-full sm:rounded-md transition-colors shrink-0 shadow-sm sm:shadow-none"
+                              title="Supprimer cette période"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
