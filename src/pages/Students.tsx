@@ -544,59 +544,39 @@ export function Students() {
                       
                       return (
                         <li key={idx} className="flex flex-col text-sm border-b border-zinc-100 pb-3 last:border-0 last:pb-0">
-                          <div className="flex items-center justify-between font-medium text-zinc-900 mb-2">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="w-4 h-4 text-primary-500" />
-                              {item.dayOfWeek}
-                            </div>
-                            <span className="text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded-md text-xs">
-                              {item.startTime || '--:--'} - {item.endTime || '--:--'}
-                            </span>
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-zinc-800">{item.dayOfWeek} {timeDisplay}</span>
+                            {hasPeriods && item.periods.length === 1 && (
+                              <span className="text-primary-700 bg-primary-50 px-2.5 py-1 rounded-lg border border-primary-100 font-medium text-xs">{item.periods[0].apsa || 'APSA non définie'}</span>
+                            )}
+                            {!hasPeriods && (
+                              <span className="text-primary-700 bg-primary-50 px-2.5 py-1 rounded-lg border border-primary-100 font-medium text-xs">{item.apsa || 'APSA non définie'}</span>
+                            )}
                           </div>
                           
                           {hasPeriods ? (
-                            <div className="flex flex-col gap-1.5">
+                            <div className="flex flex-col gap-2 mt-2">
                               {item.periods.map((p: any, pIdx: number) => {
                                 const pFacility = facilities.find(f => f.id === p.facilityId);
+                                const isSingle = item.periods.length === 1;
                                 return (
-                                  <div key={pIdx} className="flex flex-col gap-1 bg-zinc-50 p-2 rounded-lg border border-zinc-100">
-                                    <div className="text-xs font-bold text-zinc-700 flex items-center gap-1.5">
-                                      <Clock className="w-3.5 h-3.5 text-primary-500" />
-                                      Semaines {p.startWeek} à {p.endWeek}
+                                  <div key={pIdx} className={`flex items-center justify-between ${!isSingle ? 'border-t border-zinc-100 pt-2 first:border-0 first:pt-0' : ''}`}>
+                                    <div className="flex flex-col gap-1">
+                                      <span className="text-xs font-medium text-zinc-500">Semaines {p.startWeek} à {p.endWeek}</span>
+                                      {!isSingle && (
+                                        <span className="text-primary-700 bg-primary-50 px-2 py-0.5 rounded-md border border-primary-100 font-medium text-[10px] w-fit">{p.apsa || 'APSA non définie'}</span>
+                                      )}
                                     </div>
-                                    <div className="grid grid-cols-2 gap-2 text-xs text-zinc-500">
-                                      <div className="flex items-center gap-1.5">
-                                        <MapPin className="w-3.5 h-3.5" />
-                                        <span className="truncate">{pFacility ? pFacility.name : 'Lieu non défini'}</span>
-                                      </div>
-                                      <div className="flex items-center gap-1.5">
-                                        <span className="w-3.5 h-3.5 flex items-center justify-center bg-zinc-200 text-zinc-600 rounded-sm font-bold text-[8px]">A</span>
-                                        <span className="truncate">{p.apsa || 'APSA non définie'}</span>
-                                      </div>
-                                    </div>
+                                    <span className="text-xs text-primary-600 font-medium bg-white px-2 py-0.5 rounded-md border border-zinc-200">{pFacility ? pFacility.name : 'Lieu non défini'}</span>
                                   </div>
                                 );
                               })}
                             </div>
                           ) : (
-                            <>
-                              <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-zinc-500">
-                                <div className="flex items-center gap-1.5">
-                                  <MapPin className="w-3.5 h-3.5" />
-                                  <span className="truncate">{facility ? facility.name : 'Lieu non défini'}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                  <span className="w-3.5 h-3.5 flex items-center justify-center bg-zinc-200 text-zinc-600 rounded-sm font-bold text-[8px]">A</span>
-                                  <span className="truncate">{item.apsa || 'APSA non définie'}</span>
-                                </div>
-                              </div>
-                              {(item.startWeek && item.endWeek) && (
-                                <div className="mt-1.5 text-xs text-zinc-400 flex items-center gap-1.5">
-                                  <Clock className="w-3.5 h-3.5" />
-                                  <span>Semaines {item.startWeek} à {item.endWeek}</span>
-                                </div>
-                              )}
-                            </>
+                            <div className="flex items-center justify-between mt-2">
+                              <span className="text-xs font-medium text-zinc-500">{periodDisplay}</span>
+                              {facility && <span className="text-xs text-primary-600 font-medium bg-white px-2 py-0.5 rounded-md border border-zinc-200">{facility.name}</span>}
+                            </div>
                           )}
                         </li>
                       );
