@@ -3,6 +3,7 @@ import Papa from 'papaparse';
 import { Upload, Check, AlertCircle, X, FileText } from 'lucide-react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../firebase';
+import { formatFirstName, formatLastName } from '../lib/utils';
 
 interface CsvImportWizardProps {
   onComplete: () => void;
@@ -50,8 +51,8 @@ export function CsvImportWizard({ onComplete, onCancel }: CsvImportWizardProps) 
     }
 
     return {
-      firstName: firstNameParts.join(' '),
-      lastName: lastNameParts.join(' ')
+      firstName: formatFirstName(firstNameParts.join(' ')),
+      lastName: formatLastName(lastNameParts.join(' '))
     };
   };
 

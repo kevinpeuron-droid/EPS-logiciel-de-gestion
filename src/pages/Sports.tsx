@@ -17,7 +17,7 @@ export function Sports() {
       where('teacherId', '==', auth.currentUser.uid)
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const data: any[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       // Sort alphabetically
       data.sort((a, b) => a.name.localeCompare(b.name));
       setSports(data);

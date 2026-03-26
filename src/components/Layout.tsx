@@ -18,7 +18,7 @@ export function Layout() {
           <span className="bg-gradient-to-br from-primary-500 to-primary-700 text-white p-2 rounded-xl shadow-sm">
             <ClipboardCheck className="w-5 h-5" />
           </span>
-          EPS-Master
+          Minguen-EPS
         </h1>
         <button className="p-2.5 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 rounded-full transition-all">
           <Settings className="w-6 h-6" />

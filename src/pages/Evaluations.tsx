@@ -3,6 +3,7 @@ import { collection, query, onSnapshot, addDoc, serverTimestamp, where } from 'f
 import { db, auth } from '../firebase';
 import { GoogleGenAI } from '@google/genai';
 import { ClipboardCheck, Sparkles, Loader2, Save } from 'lucide-react';
+import { formatFirstName, formatLastName } from '../lib/utils';
 
 let aiInstance: GoogleGenAI | null = null;
 
@@ -31,10 +32,10 @@ function EvaluationRow({ student, selectedApsa, evaluations, onGenerateComment, 
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-zinc-100 text-zinc-700 flex items-center justify-center font-bold">
-            {student.firstName[0]}{student.lastName[0]}
+            {formatLastName(student.lastName)?.[0]}{formatFirstName(student.firstName)?.[0]}
           </div>
           <div>
-            <h3 className="font-bold text-zinc-900">{student.firstName} {student.lastName}</h3>
+            <h3 className="font-bold text-zinc-900">{formatLastName(student.lastName)} {formatFirstName(student.firstName)}</h3>
             <p className="text-xs text-zinc-500 uppercase tracking-wider">Classe: {student.classGroupId}</p>
           </div>
         </div>
@@ -107,7 +108,7 @@ export function Evaluations() {
       where('teacherId', '==', auth.currentUser.uid)
     );
     const unsubSports = onSnapshot(qSports, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const data: any[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       data.sort((a, b) => a.name.localeCompare(b.name));
       setSports(data);
       setSelectedApsa(prev => {
@@ -131,7 +132,7 @@ export function Evaluations() {
       const ai = getAI();
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `En tant que professeur d'EPS, rédige une appréciation courte (1 phrase) et constructive pour l'élève ${student.firstName} ${student.lastName} qui a obtenu la note de ${grade}/${maxGrade} en ${selectedApsa}. Le ton doit être encourageant et professionnel.`,
+        contents: `En tant que professeur d'EPS, rédige une appréciation courte (1 phrase) et constructive pour l'élève ${formatFirstName(student.firstName)} ${formatLastName(student.lastName)} qui a obtenu la note de ${grade}/${maxGrade} en ${selectedApsa}. Le ton doit être encourageant et professionnel.`,
       });
 
       const comment = response.text.trim();

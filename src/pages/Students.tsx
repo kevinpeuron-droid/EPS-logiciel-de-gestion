@@ -4,16 +4,19 @@ import { db, auth } from '../firebase';
 import { StudentHealthBadge } from '../components/StudentHealthBadge';
 import { CsvImportWizard } from '../components/CsvImportWizard';
 import { Users, Plus, UserPlus, Search, Upload, Folder, Calendar, ChevronLeft, Settings } from 'lucide-react';
+import { formatFirstName, formatLastName } from '../lib/utils';
 
 interface ClassSchedule {
   dayOfWeek: string;
-  timeSlot?: string;
-  period?: string;
+  startTime?: string;
+  endTime?: string;
+  startDate?: string;
+  endDate?: string;
   facilityId?: string;
   apsa: string;
   // Legacy fields for backward compatibility
-  startTime?: string;
-  endTime?: string;
+  timeSlot?: string;
+  period?: string;
   startWeek?: number;
   endWeek?: number;
 }
@@ -102,8 +105,8 @@ export function Students() {
 
     try {
       const studentData: any = {
-        firstName: newStudent.firstName,
-        lastName: newStudent.lastName,
+        firstName: formatFirstName(newStudent.firstName),
+        lastName: formatLastName(newStudent.lastName),
         classGroupId: selectedClass,
         healthAlerts: newStudent.healthAlerts ? newStudent.healthAlerts.split(',').map(s => s.trim()) : [],
         teacherId: auth.currentUser.uid,
@@ -179,8 +182,10 @@ export function Students() {
   const addScheduleItem = () => {
     setScheduleForm([...scheduleForm, { 
       dayOfWeek: 'Lundi', 
-      timeSlot: '08:00 - 10:00',
-      period: 'Période 1',
+      startTime: '08:00',
+      endTime: '10:00',
+      startDate: '',
+      endDate: '',
       apsa: sports[0]?.name || '',
       facilityId: facilities[0]?.id || ''
     }]);
@@ -200,9 +205,9 @@ export function Students() {
 
   if (selectedClass) {
     const classStudents = students.filter(s => s.classGroupId === selectedClass);
-    const filteredStudents = classStudents.filter(s => 
-      `${s.firstName} ${s.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredStudents = classStudents
+      .filter(s => `${s.firstName} ${s.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()))
+      .sort((a, b) => (a.lastName || '').localeCompare(b.lastName || ''));
 
     return (
       <div className="space-y-6">
@@ -325,11 +330,11 @@ export function Students() {
               <li key={student.id} className="p-5 hover:bg-zinc-50 transition-colors flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center font-bold text-lg shadow-sm border border-primary-100">
-                    {student.firstName[0]}{student.lastName[0]}
+                    {formatLastName(student.lastName)?.[0]}{formatFirstName(student.firstName)?.[0]}
                   </div>
                   <div>
                     <p className="text-lg font-semibold text-zinc-900">
-                      {student.firstName} {student.lastName}
+                      {formatLastName(student.lastName)} {formatFirstName(student.firstName)}
                     </p>
                   </div>
                 </div>
@@ -427,8 +432,20 @@ export function Students() {
                   <ul className="space-y-4">
                     {schedule.map((item, idx) => {
                       const facility = facilities.find(f => f.id === item.facilityId);
-                      const timeDisplay = item.timeSlot || (item.startTime && item.endTime ? `${item.startTime}-${item.endTime}` : '');
-                      const periodDisplay = item.period || (item.startWeek && item.endWeek ? `Semaines ${item.startWeek} à ${item.endWeek}` : '');
+                      
+                      const timeDisplay = item.startTime && item.endTime 
+                        ? `${item.startTime} - ${item.endTime}` 
+                        : (item.timeSlot || '');
+                        
+                      const formatDate = (dateStr?: string) => {
+                        if (!dateStr) return '';
+                        const [year, month, day] = dateStr.split('-');
+                        return `${day}/${month}/${year}`;
+                      };
+                      
+                      const periodDisplay = item.startDate && item.endDate
+                        ? `Du ${formatDate(item.startDate)} au ${formatDate(item.endDate)}`
+                        : (item.period || (item.startWeek && item.endWeek ? `Semaines ${item.startWeek} à ${item.endWeek}` : ''));
                       
                       return (
                         <li key={idx} className="flex flex-col text-sm border-b border-zinc-100 pb-3 last:border-0 last:pb-0">
@@ -489,7 +506,7 @@ export function Students() {
                   >
                     &times;
                   </button>
-                  <div className="grid grid-cols-2 gap-4 pr-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-10 mb-4">
                     <div>
                       <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Jour</label>
                       <select
@@ -501,34 +518,47 @@ export function Students() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Horaire</label>
-                      <select
-                        value={item.timeSlot || (item.startTime && item.endTime ? `${item.startTime} - ${item.endTime}` : '')}
-                        onChange={(e) => updateScheduleItem(index, 'timeSlot', e.target.value)}
-                        className="w-full p-2.5 border border-zinc-300 rounded-xl bg-white text-sm font-medium shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      >
-                        <option value="">Sélectionner...</option>
-                        {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
-                        {!item.timeSlot && item.startTime && item.endTime && !TIME_SLOTS.includes(`${item.startTime} - ${item.endTime}`) && (
-                          <option value={`${item.startTime} - ${item.endTime}`}>{item.startTime} - {item.endTime}</option>
-                        )}
-                      </select>
+                      <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Horaires</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="time"
+                          value={item.startTime || ''}
+                          onChange={(e) => updateScheduleItem(index, 'startTime', e.target.value)}
+                          className="w-full p-2.5 border border-zinc-300 rounded-xl bg-white text-sm font-medium shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        />
+                        <span className="text-zinc-400 text-sm font-medium">à</span>
+                        <input
+                          type="time"
+                          value={item.endTime || ''}
+                          onChange={(e) => updateScheduleItem(index, 'endTime', e.target.value)}
+                          className="w-full p-2.5 border border-zinc-300 rounded-xl bg-white text-sm font-medium shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        />
+                      </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pr-10">
                     <div>
                       <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Période</label>
-                      <select
-                        value={item.period || (item.startWeek && item.endWeek ? `Semaines ${item.startWeek} à ${item.endWeek}` : '')}
-                        onChange={(e) => updateScheduleItem(index, 'period', e.target.value)}
-                        className="w-full p-2.5 border border-zinc-300 rounded-xl bg-white text-sm font-medium shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      >
-                        <option value="">Sélectionner...</option>
-                        {PERIODS.map(p => <option key={p} value={p}>{p}</option>)}
-                        {!item.period && item.startWeek && item.endWeek && !PERIODS.includes(`Semaines ${item.startWeek} à ${item.endWeek}`) && (
-                          <option value={`Semaines ${item.startWeek} à ${item.endWeek}`}>Semaines {item.startWeek} à {item.endWeek}</option>
-                        )}
-                      </select>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-zinc-400 text-xs font-medium w-6">Du</span>
+                          <input
+                            type="date"
+                            value={item.startDate || ''}
+                            onChange={(e) => updateScheduleItem(index, 'startDate', e.target.value)}
+                            className="w-full p-2.5 border border-zinc-300 rounded-xl bg-white text-sm font-medium shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-zinc-400 text-xs font-medium w-6">Au</span>
+                          <input
+                            type="date"
+                            value={item.endDate || ''}
+                            onChange={(e) => updateScheduleItem(index, 'endDate', e.target.value)}
+                            className="w-full p-2.5 border border-zinc-300 rounded-xl bg-white text-sm font-medium shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                          />
+                        </div>
+                      </div>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Lieu</label>

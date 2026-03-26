@@ -47,7 +47,7 @@ export default function App() {
       <div className="min-h-screen bg-[#f8f9fa] flex flex-col items-center justify-center p-6 relative overflow-hidden">
         {/* Background decorative elements */}
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary-200/40 rounded-full blur-3xl" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-200/40 rounded-full blur-3xl" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-200/40 rounded-full blur-3xl" />
 
         <div className="bg-white/80 backdrop-blur-xl p-10 rounded-[2.5rem] shadow-2xl border border-white/50 max-w-md w-full text-center space-y-8 relative z-10">
           <div className="w-20 h-20 bg-gradient-to-br from-primary-500 to-primary-700 text-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary-500/30">
@@ -55,7 +55,7 @@ export default function App() {
           </div>
           
           <div className="space-y-3">
-            <h1 className="text-4xl font-bold text-zinc-900 tracking-tight font-display">EPS-Master</h1>
+            <h1 className="text-4xl font-bold text-zinc-900 tracking-tight font-display">Minguen-EPS</h1>
             <p className="text-zinc-500 text-lg font-medium">L'application terrain pour les professeurs d'EPS.</p>
           </div>
           

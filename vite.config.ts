@@ -14,20 +14,20 @@ export default defineConfig(({mode}) => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
         manifest: {
-          name: 'EPS-Master',
-          short_name: 'EPS-Master',
+          name: 'Minguen-EPS',
+          short_name: 'Minguen-EPS',
           description: 'Application terrain pour les professeurs d\'EPS',
-          theme_color: '#4f46e5',
+          theme_color: '#059669',
           background_color: '#f8fafc',
           display: 'standalone',
           icons: [
             {
-              src: 'https://api.dicebear.com/7.x/shapes/svg?seed=eps&backgroundColor=4f46e5',
+              src: 'https://api.dicebear.com/7.x/shapes/svg?seed=eps&backgroundColor=059669',
               sizes: '192x192',
               type: 'image/svg+xml'
             },
             {
-              src: 'https://api.dicebear.com/7.x/shapes/svg?seed=eps&backgroundColor=4f46e5',
+              src: 'https://api.dicebear.com/7.x/shapes/svg?seed=eps&backgroundColor=059669',
               sizes: '512x512',
               type: 'image/svg+xml'
             }

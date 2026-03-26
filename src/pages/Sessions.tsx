@@ -34,7 +34,7 @@ export function Sessions() {
       where('teacherId', '==', auth.currentUser.uid)
     );
     const unsubscribeSports = onSnapshot(qSports, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const data: any[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       data.sort((a, b) => a.name.localeCompare(b.name));
       setSports(data);
     });
