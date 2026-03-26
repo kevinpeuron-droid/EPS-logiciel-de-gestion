@@ -35,6 +35,7 @@ export function Sessions() {
       setCalendarError(null);
       const provider = new GoogleAuthProvider();
       provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
+      provider.setCustomParameters({ prompt: 'consent' }); // Force consent to ensure scope is granted
       const result = await signInWithPopup(auth, provider);
       const credential = GoogleAuthProvider.credentialFromResult(result);
       const token = credential?.accessToken;
@@ -73,7 +74,14 @@ export function Sessions() {
             setGoogleToken(null); // Token expired
             throw new Error("Session expirée, veuillez vous reconnecter.");
           }
-          throw new Error("Erreur lors de la récupération des événements.");
+          const errorData = await response.json().catch(() => null);
+          console.error("Google API Error:", errorData);
+          
+          if (errorData?.error?.message?.includes('API has not been used in project') || errorData?.error?.status === 'PERMISSION_DENIED') {
+            throw new Error("L'API Google Calendar n'est pas activée. Veuillez l'activer dans la console Google Cloud de votre projet Firebase.");
+          }
+          
+          throw new Error(`Erreur Google: ${errorData?.error?.message || response.statusText}`);
         }
         
         const data = await response.json();
@@ -204,25 +212,29 @@ export function Sessions() {
       schedule.forEach((item: any) => {
         if (item.dayOfWeek === currentDayName) {
           // Check date bounds if they exist
-          let isWithinBounds = true;
-          if (item.startWeek && item.endWeek) {
+          let isWithinBounds = false;
+          if (item.periods && item.periods.length > 0) {
+            const currentWeek = getISOWeek(selectedDate);
+            isWithinBounds = item.periods.some((p: any) => {
+              if (p.startWeek <= p.endWeek) {
+                return currentWeek >= p.startWeek && currentWeek <= p.endWeek;
+              } else {
+                return currentWeek >= p.startWeek || currentWeek <= p.endWeek;
+              }
+            });
+          } else if (item.startWeek && item.endWeek) {
             const currentWeek = getISOWeek(selectedDate);
             if (item.startWeek <= item.endWeek) {
-              if (currentWeek < item.startWeek || currentWeek > item.endWeek) {
-                isWithinBounds = false;
-              }
+              isWithinBounds = currentWeek >= item.startWeek && currentWeek <= item.endWeek;
             } else {
-              // Wraps around the year (e.g., 36 to 24)
-              if (currentWeek < item.startWeek && currentWeek > item.endWeek) {
-                isWithinBounds = false;
-              }
+              isWithinBounds = currentWeek >= item.startWeek || currentWeek <= item.endWeek;
             }
           } else if (item.startDate && item.endDate) {
             const start = startOfDay(parseISO(item.startDate));
             const end = endOfDay(parseISO(item.endDate));
-            if (!isWithinInterval(selectedDate, { start, end })) {
-              isWithinBounds = false;
-            }
+            isWithinBounds = isWithinInterval(selectedDate, { start, end });
+          } else {
+            isWithinBounds = true; // No bounds = always active
           }
 
           if (isWithinBounds) {

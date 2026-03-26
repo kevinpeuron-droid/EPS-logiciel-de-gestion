@@ -6,10 +6,16 @@ import { CsvImportWizard } from '../components/CsvImportWizard';
 import { Users, Plus, UserPlus, Search, Upload, Folder, Calendar, ChevronLeft, Settings, Trash2 } from 'lucide-react';
 import { formatFirstName, formatLastName } from '../lib/utils';
 
+interface SchedulePeriod {
+  startWeek: number;
+  endWeek: number;
+}
+
 interface ClassSchedule {
   dayOfWeek: string;
   startTime?: string;
   endTime?: string;
+  periods?: SchedulePeriod[];
   startDate?: string;
   endDate?: string;
   facilityId?: string;
@@ -166,7 +172,18 @@ export function Students() {
     const classGroup = classGroups.find(c => c.name === className);
     if (classGroup && classGroup.scheduleJson) {
       try {
-        setScheduleForm(JSON.parse(classGroup.scheduleJson));
+        const parsed = JSON.parse(classGroup.scheduleJson);
+        const migrated = parsed.map((item: any) => {
+          if (!item.periods) {
+            if (item.startWeek && item.endWeek) {
+              item.periods = [{ startWeek: item.startWeek, endWeek: item.endWeek }];
+            } else {
+              item.periods = [{ startWeek: 1, endWeek: 52 }];
+            }
+          }
+          return item;
+        });
+        setScheduleForm(migrated);
       } catch (e) {
         setScheduleForm([]);
       }
@@ -205,8 +222,7 @@ export function Students() {
       dayOfWeek: 'Lundi', 
       startTime: '08:00',
       endTime: '10:00',
-      startWeek: 1,
-      endWeek: 52,
+      periods: [{ startWeek: 1, endWeek: 52 }],
       apsa: sports[0]?.name || '',
       facilityId: facilities[0]?.id || ''
     }]);
@@ -216,6 +232,29 @@ export function Students() {
     const newSchedule = [...scheduleForm];
     newSchedule[index][field] = value;
     setScheduleForm(newSchedule);
+  };
+
+  const addPeriodToItem = (index: number) => {
+    const newSchedule = [...scheduleForm];
+    if (!newSchedule[index].periods) newSchedule[index].periods = [];
+    newSchedule[index].periods!.push({ startWeek: 1, endWeek: 52 });
+    setScheduleForm(newSchedule);
+  };
+
+  const updateSchedulePeriod = (itemIndex: number, periodIndex: number, field: keyof SchedulePeriod, value: number) => {
+    const newSchedule = [...scheduleForm];
+    if (newSchedule[itemIndex].periods) {
+      newSchedule[itemIndex].periods![periodIndex][field] = value;
+      setScheduleForm(newSchedule);
+    }
+  };
+
+  const removePeriodFromItem = (itemIndex: number, periodIndex: number) => {
+    const newSchedule = [...scheduleForm];
+    if (newSchedule[itemIndex].periods) {
+      newSchedule[itemIndex].periods!.splice(periodIndex, 1);
+      setScheduleForm(newSchedule);
+    }
   };
 
   const removeScheduleItem = (index: number) => {
@@ -473,9 +512,11 @@ export function Students() {
                         return `${day}/${month}/${year}`;
                       };
                       
-                      const periodDisplay = item.startDate && item.endDate
-                        ? `Du ${formatDate(item.startDate)} au ${formatDate(item.endDate)}`
-                        : (item.period || (item.startWeek && item.endWeek ? `Semaines ${item.startWeek} à ${item.endWeek}` : ''));
+                      const periodDisplay = item.periods && item.periods.length > 0
+                        ? item.periods.map((p: any) => `S${p.startWeek}-S${p.endWeek}`).join(', ')
+                        : (item.startDate && item.endDate
+                          ? `Du ${formatDate(item.startDate)} au ${formatDate(item.endDate)}`
+                          : (item.period || (item.startWeek && item.endWeek ? `Semaines ${item.startWeek} à ${item.endWeek}` : '')));
                       
                       return (
                         <li key={idx} className="flex flex-col text-sm border-b border-zinc-100 pb-3 last:border-0 last:pb-0">
@@ -567,33 +608,39 @@ export function Students() {
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pr-10">
-                    <div>
-                      <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Période</label>
+                    <div className="md:col-span-1">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider">Périodes</label>
+                        <button type="button" onClick={() => addPeriodToItem(index)} className="text-xs text-primary-600 hover:text-primary-700 font-bold">+ Ajouter</button>
+                      </div>
                       <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-zinc-400 text-xs font-medium w-8">De S</span>
-                          <input
-                            type="number"
-                            min="1"
-                            max="52"
-                            value={item.startWeek || ''}
-                            onChange={(e) => updateScheduleItem(index, 'startWeek', parseInt(e.target.value, 10))}
-                            className="w-full p-2.5 border border-zinc-300 rounded-xl bg-white text-sm font-medium shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                            placeholder="1"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-zinc-400 text-xs font-medium w-8">à S</span>
-                          <input
-                            type="number"
-                            min="1"
-                            max="52"
-                            value={item.endWeek || ''}
-                            onChange={(e) => updateScheduleItem(index, 'endWeek', parseInt(e.target.value, 10))}
-                            className="w-full p-2.5 border border-zinc-300 rounded-xl bg-white text-sm font-medium shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                            placeholder="52"
-                          />
-                        </div>
+                        {item.periods?.map((period, pIdx) => (
+                          <div key={pIdx} className="flex items-center gap-2 relative group">
+                            <span className="text-zinc-400 text-xs font-medium w-8">De S</span>
+                            <input
+                              type="number"
+                              min="1"
+                              max="52"
+                              value={period.startWeek || ''}
+                              onChange={(e) => updateSchedulePeriod(index, pIdx, 'startWeek', parseInt(e.target.value, 10))}
+                              className="w-full p-2 border border-zinc-300 rounded-lg bg-white text-sm font-medium shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            />
+                            <span className="text-zinc-400 text-xs font-medium w-8 text-center">à S</span>
+                            <input
+                              type="number"
+                              min="1"
+                              max="52"
+                              value={period.endWeek || ''}
+                              onChange={(e) => updateSchedulePeriod(index, pIdx, 'endWeek', parseInt(e.target.value, 10))}
+                              className="w-full p-2 border border-zinc-300 rounded-lg bg-white text-sm font-medium shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            />
+                            {item.periods!.length > 1 && (
+                              <button type="button" onClick={() => removePeriodFromItem(index, pIdx)} className="absolute -right-6 text-zinc-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                &times;
+                              </button>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
                     <div>
