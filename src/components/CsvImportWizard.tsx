@@ -125,19 +125,19 @@ export function CsvImportWizard({ onComplete, onCancel }: CsvImportWizardProps) 
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 animate-in fade-in slide-in-from-top-4">
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-200 animate-in fade-in slide-in-from-top-4">
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-          <Upload className="w-5 h-5 text-indigo-600" />
+        <h3 className="text-lg font-semibold text-zinc-800 flex items-center gap-2">
+          <Upload className="w-5 h-5 text-primary" />
           Importer des élèves (CSV)
         </h3>
-        <button onClick={onCancel} className="text-slate-400 hover:text-slate-600">
+        <button onClick={onCancel} className="text-zinc-400 hover:text-zinc-600">
           <X className="w-5 h-5" />
         </button>
       </div>
 
       {!file ? (
-        <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:bg-slate-50 transition-colors">
+        <div className="border-2 border-dashed border-zinc-300 rounded-xl p-8 text-center hover:bg-zinc-50 transition-colors">
           <input
             type="file"
             accept=".csv"
@@ -146,35 +146,35 @@ export function CsvImportWizard({ onComplete, onCancel }: CsvImportWizardProps) 
             id="csv-upload"
           />
           <label htmlFor="csv-upload" className="cursor-pointer flex flex-col items-center">
-            <FileText className="w-12 h-12 text-slate-400 mb-3" />
-            <span className="text-slate-700 font-medium mb-1">Cliquez pour sélectionner un fichier CSV</span>
-            <span className="text-slate-500 text-sm">Le fichier doit contenir au moins une colonne avec le Nom et Prénom</span>
+            <FileText className="w-12 h-12 text-zinc-400 mb-3" />
+            <span className="text-zinc-700 font-medium mb-1">Cliquez pour sélectionner un fichier CSV</span>
+            <span className="text-zinc-500 text-sm">Le fichier doit contenir au moins une colonne avec le Nom et Prénom</span>
           </label>
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-center justify-between">
+          <div className="bg-zinc-50 p-4 rounded-xl border border-zinc-200 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <FileText className="w-6 h-6 text-indigo-600" />
+              <FileText className="w-6 h-6 text-primary" />
               <div>
-                <p className="font-medium text-slate-800">{file.name}</p>
-                <p className="text-xs text-slate-500">{data.length} lignes détectées</p>
+                <p className="font-medium text-zinc-800">{file.name}</p>
+                <p className="text-xs text-zinc-500">{data.length} lignes détectées</p>
               </div>
             </div>
             <button 
               onClick={() => { setFile(null); setData([]); setHeaders([]); }}
-              className="text-sm text-slate-500 hover:text-slate-700 underline"
+              className="text-sm text-zinc-500 hover:text-zinc-700 underline"
             >
               Changer de fichier
             </button>
           </div>
 
           <div className="space-y-4">
-            <h4 className="font-medium text-slate-800">Configuration de l'import :</h4>
+            <h4 className="font-medium text-zinc-800">Configuration de l'import :</h4>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-sm font-medium text-slate-700 flex items-center gap-1">
+                <label className="text-sm font-medium text-zinc-700 flex items-center gap-1">
                   Classe cible <span className="text-red-500">*</span>
                 </label>
                 <input 
@@ -182,33 +182,33 @@ export function CsvImportWizard({ onComplete, onCancel }: CsvImportWizardProps) 
                   value={targetClass}
                   onChange={(e) => setTargetClass(e.target.value)}
                   placeholder="Ex: 6A, 5B..."
-                  className="w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-2.5 bg-white border border-zinc-300 rounded-lg focus:ring-2 focus:ring-primary"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-sm font-medium text-slate-700 flex items-center gap-1">
+                <label className="text-sm font-medium text-zinc-700 flex items-center gap-1">
                   Colonne Nom & Prénom <span className="text-red-500">*</span>
                 </label>
                 <select 
                   value={mapping.fullName}
                   onChange={(e) => setMapping({...mapping, fullName: e.target.value})}
-                  className="w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-2.5 bg-white border border-zinc-300 rounded-lg focus:ring-2 focus:ring-primary"
                 >
                   <option value="">-- Sélectionner --</option>
                   {headers.map(h => <option key={h} value={h}>{h}</option>)}
                 </select>
-                <p className="text-xs text-slate-500 mt-1">Le nom (en majuscules) sera séparé du prénom automatiquement.</p>
+                <p className="text-xs text-zinc-500 mt-1">Le nom (en majuscules) sera séparé du prénom automatiquement.</p>
               </div>
 
               <div className="space-y-1 md:col-span-2">
-                <label className="text-sm font-medium text-slate-700">
+                <label className="text-sm font-medium text-zinc-700">
                   Alertes Santé (Optionnel)
                 </label>
                 <select 
                   value={mapping.healthAlerts}
                   onChange={(e) => setMapping({...mapping, healthAlerts: e.target.value})}
-                  className="w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-2.5 bg-white border border-zinc-300 rounded-lg focus:ring-2 focus:ring-primary"
                 >
                   <option value="">-- Ignorer --</option>
                   {headers.map(h => <option key={h} value={h}>{h}</option>)}
@@ -219,10 +219,10 @@ export function CsvImportWizard({ onComplete, onCancel }: CsvImportWizardProps) 
 
           {data.length > 0 && mapping.fullName && targetClass && (
             <div className="mt-6">
-              <h4 className="font-medium text-slate-800 mb-2">Aperçu (3 premières lignes) :</h4>
-              <div className="overflow-x-auto border border-slate-200 rounded-lg">
+              <h4 className="font-medium text-zinc-800 mb-2">Aperçu (3 premières lignes) :</h4>
+              <div className="overflow-x-auto border border-zinc-200 rounded-lg">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
+                  <thead className="bg-zinc-50 text-zinc-600 font-medium border-b border-zinc-200">
                     <tr>
                       <th className="px-4 py-2">Nom extrait</th>
                       <th className="px-4 py-2">Prénom extrait</th>
@@ -230,7 +230,7 @@ export function CsvImportWizard({ onComplete, onCancel }: CsvImportWizardProps) 
                       <th className="px-4 py-2">Santé</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-zinc-100">
                     {data.slice(0, 3).map((row, i) => {
                       const { firstName, lastName } = parseFullName(row[mapping.fullName] || '');
                       return (
@@ -255,11 +255,11 @@ export function CsvImportWizard({ onComplete, onCancel }: CsvImportWizardProps) 
             </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+          <div className="flex justify-end gap-3 pt-4 border-t border-zinc-100">
             <button
               type="button"
               onClick={onCancel}
-              className="px-5 py-2.5 text-slate-600 font-medium hover:bg-slate-100 rounded-xl transition-colors"
+              className="px-5 py-2.5 text-zinc-600 font-medium hover:bg-zinc-100 rounded-xl transition-colors"
               disabled={isImporting}
             >
               Annuler
@@ -267,7 +267,7 @@ export function CsvImportWizard({ onComplete, onCancel }: CsvImportWizardProps) 
             <button
               onClick={handleImport}
               disabled={isImporting || !mapping.fullName || !targetClass.trim()}
-              className="px-5 py-2.5 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-5 py-2.5 bg-primary text-white font-medium rounded-xl hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {isImporting ? (
                 <>Importation en cours...</>

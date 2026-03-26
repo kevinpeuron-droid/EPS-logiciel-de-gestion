@@ -65,25 +65,25 @@ export function Sessions() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Mes Séances</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-zinc-900">Mes Séances</h2>
         <button
           onClick={() => setIsAdding(!isAdding)}
-          className="bg-indigo-600 text-white p-3 rounded-full shadow-md hover:bg-indigo-700 transition-colors active:scale-95"
+          className="bg-primary text-white p-3 rounded-full shadow-md hover:bg-primary/90 transition-colors active:scale-95"
         >
           <Plus className="w-6 h-6" />
         </button>
       </div>
 
       {isAdding && (
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 animate-in fade-in slide-in-from-top-4">
-          <h3 className="text-lg font-semibold mb-4 text-slate-800">Nouvelle Séance</h3>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-200 animate-in fade-in slide-in-from-top-4">
+          <h3 className="text-lg font-semibold mb-4 text-zinc-800">Nouvelle Séance</h3>
           <form onSubmit={handleAddSession} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Titre de la séance</label>
+              <label className="block text-sm font-medium text-zinc-700 mb-1">Titre de la séance</label>
               <input
                 type="text"
                 required
-                className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full p-3 border border-zinc-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary"
                 value={newSession.title}
                 onChange={(e) => setNewSession({ ...newSession, title: e.target.value })}
                 placeholder="Ex: Séance 1 - Évaluation diagnostique"
@@ -91,20 +91,20 @@ export function Sessions() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                <label className="block text-sm font-medium text-zinc-700 mb-1">Date</label>
                 <input
                   type="datetime-local"
                   required
-                  className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full p-3 border border-zinc-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary"
                   value={newSession.date}
                   onChange={(e) => setNewSession({ ...newSession, date: e.target.value })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">APSA</label>
+                <label className="block text-sm font-medium text-zinc-700 mb-1">APSA</label>
                 <select
                   required
-                  className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full p-3 border border-zinc-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary"
                   value={newSession.apsa}
                   onChange={(e) => setNewSession({ ...newSession, apsa: e.target.value })}
                 >
@@ -118,7 +118,7 @@ export function Sessions() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Fiche Séance (PDF)</label>
+              <label className="block text-sm font-medium text-zinc-700 mb-2">Fiche Séance (PDF)</label>
               <FileUpload
                 onUploadComplete={(url, name) => {
                   setNewSession(prev => ({ ...prev, pdfUrls: [...prev.pdfUrls, url] }));
@@ -127,7 +127,7 @@ export function Sessions() {
               {newSession.pdfUrls.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-2">
                   {newSession.pdfUrls.map((url, i) => (
-                    <span key={i} className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-sm font-medium">
+                    <span key={i} className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
                       <FileText className="w-4 h-4 mr-2" />
                       PDF {i + 1}
                     </span>
@@ -140,13 +140,13 @@ export function Sessions() {
               <button
                 type="button"
                 onClick={() => setIsAdding(false)}
-                className="px-5 py-2.5 text-slate-600 font-medium hover:bg-slate-100 rounded-xl transition-colors"
+                className="px-5 py-2.5 text-zinc-600 font-medium hover:bg-zinc-100 rounded-xl transition-colors"
               >
                 Annuler
               </button>
               <button
                 type="submit"
-                className="px-5 py-2.5 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-sm"
+                className="px-5 py-2.5 bg-primary text-white font-medium rounded-xl hover:bg-primary/90 transition-colors shadow-sm"
               >
                 Enregistrer
               </button>
@@ -157,17 +157,17 @@ export function Sessions() {
 
       <div className="grid gap-4">
         {sessions.map((session) => (
-          <div key={session.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow cursor-pointer">
+          <div key={session.id} className="bg-white p-5 rounded-2xl shadow-sm border border-zinc-200 hover:shadow-md transition-shadow cursor-pointer">
             <div className="flex justify-between items-start mb-3">
               <div>
-                <span className="inline-block px-2.5 py-1 bg-indigo-100 text-indigo-800 text-xs font-bold uppercase tracking-wider rounded-md mb-2">
+                <span className="inline-block px-2.5 py-1 bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider rounded-md mb-2">
                   {session.apsa}
                 </span>
-                <h3 className="text-lg font-bold text-slate-900">{session.title}</h3>
+                <h3 className="text-lg font-bold text-zinc-900">{session.title}</h3>
               </div>
             </div>
             
-            <div className="flex items-center gap-4 text-sm text-slate-500 mb-4">
+            <div className="flex items-center gap-4 text-sm text-zinc-500 mb-4">
               <div className="flex items-center">
                 <CalendarIcon className="w-4 h-4 mr-1.5" />
                 {session.date ? format(new Date(session.date), 'dd MMM yyyy', { locale: fr }) : 'Date non définie'}
@@ -179,17 +179,17 @@ export function Sessions() {
             </div>
 
             {session.pdfUrls && session.pdfUrls.length > 0 && (
-              <div className="pt-3 border-t border-slate-100 flex gap-2">
+              <div className="pt-3 border-t border-zinc-100 flex gap-2">
                 {session.pdfUrls.map((url: string, i: number) => (
                   <a
                     key={i}
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 text-sm font-medium rounded-lg border border-slate-200 transition-colors"
+                    className="flex items-center px-3 py-1.5 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 text-sm font-medium rounded-lg border border-zinc-200 transition-colors"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <FileText className="w-4 h-4 mr-2 text-indigo-500" />
+                    <FileText className="w-4 h-4 mr-2 text-primary" />
                     Ouvrir PDF
                   </a>
                 ))}
@@ -198,8 +198,8 @@ export function Sessions() {
           </div>
         ))}
         {sessions.length === 0 && !isAdding && (
-          <div className="text-center py-12 text-slate-500">
-            <CalendarIcon className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+          <div className="text-center py-12 text-zinc-500">
+            <CalendarIcon className="w-12 h-12 mx-auto text-zinc-300 mb-3" />
             <p className="text-lg font-medium">Aucune séance prévue</p>
             <p className="text-sm">Appuyez sur le bouton + pour créer votre première séance.</p>
           </div>

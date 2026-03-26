@@ -27,15 +27,15 @@ function EvaluationRow({ student, selectedApsa, evaluations, onGenerateComment, 
   }, [evalData]);
 
   return (
-    <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+    <div className="bg-white p-5 rounded-2xl shadow-sm border border-zinc-200">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-full bg-zinc-100 text-zinc-700 flex items-center justify-center font-bold">
             {student.firstName[0]}{student.lastName[0]}
           </div>
           <div>
-            <h3 className="font-bold text-slate-900">{student.firstName} {student.lastName}</h3>
-            <p className="text-xs text-slate-500 uppercase tracking-wider">Classe: {student.classGroupId}</p>
+            <h3 className="font-bold text-zinc-900">{student.firstName} {student.lastName}</h3>
+            <p className="text-xs text-zinc-500 uppercase tracking-wider">Classe: {student.classGroupId}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -46,22 +46,22 @@ function EvaluationRow({ student, selectedApsa, evaluations, onGenerateComment, 
             value={grade}
             onChange={(e) => setGrade(e.target.value)}
             placeholder="Note"
-            className="w-20 p-2 text-center border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-bold text-lg"
+            className="w-20 p-2 text-center border border-zinc-300 rounded-lg focus:ring-2 focus:ring-primary font-bold text-lg"
           />
-          <span className="text-slate-400 font-bold">/ {maxGrade}</span>
+          <span className="text-zinc-400 font-bold">/ {maxGrade}</span>
         </div>
       </div>
 
-      <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 relative">
+      <div className="bg-zinc-50 p-4 rounded-xl border border-zinc-100 relative">
         {evalData?.comment ? (
-          <p className="text-sm text-slate-700 italic">"{evalData.comment}"</p>
+          <p className="text-sm text-zinc-700 italic">"{evalData.comment}"</p>
         ) : (
           <div className="flex justify-between items-center">
-            <p className="text-sm text-slate-400 italic">Aucune appréciation générée.</p>
+            <p className="text-sm text-zinc-400 italic">Aucune appréciation générée.</p>
             <button
               onClick={() => onGenerateComment(student, Number(grade), maxGrade)}
               disabled={!grade || isGenerating === student.id}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
             >
               {isGenerating === student.id ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -156,13 +156,13 @@ export function Evaluations() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Évaluations</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-zinc-900">Évaluations</h2>
       </div>
 
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-        <label className="block text-sm font-medium text-slate-700 mb-2">Sélectionner l'APSA en cours</label>
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-zinc-200">
+        <label className="block text-sm font-medium text-zinc-700 mb-2">Sélectionner l'APSA en cours</label>
         <select
-          className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium"
+          className="w-full p-3 border border-zinc-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary font-medium"
           value={selectedApsa}
           onChange={(e) => setSelectedApsa(e.target.value)}
         >
@@ -186,8 +186,8 @@ export function Evaluations() {
         ))}
         
         {students.length === 0 && (
-          <div className="text-center py-12 text-slate-500 bg-white rounded-2xl border border-slate-200 border-dashed">
-            <ClipboardCheck className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+          <div className="text-center py-12 text-zinc-500 bg-white rounded-2xl border border-zinc-200 border-dashed">
+            <ClipboardCheck className="w-12 h-12 mx-auto text-zinc-300 mb-3" />
             <p className="text-lg font-medium">Aucun élève à évaluer</p>
             <p className="text-sm">Ajoutez des élèves dans l'onglet Élèves.</p>
           </div>

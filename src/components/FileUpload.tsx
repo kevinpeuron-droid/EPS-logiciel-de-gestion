@@ -70,7 +70,7 @@ export function FileUpload({ onUploadComplete, className }: FileUploadProps) {
         onDrop={onDrop}
         className={cn(
           "relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-xl transition-colors",
-          isDragging ? "border-indigo-500 bg-indigo-50/50" : "border-slate-300 bg-slate-50 hover:bg-slate-100",
+          isDragging ? "border-primary bg-primary/5" : "border-zinc-300 bg-zinc-50 hover:bg-zinc-100",
           uploading && "opacity-50 pointer-events-none"
         )}
       >
@@ -84,24 +84,24 @@ export function FileUpload({ onUploadComplete, className }: FileUploadProps) {
         
         {uploading ? (
           <div className="flex flex-col items-center space-y-3">
-            <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
-            <div className="text-sm font-medium text-slate-600">
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <div className="text-sm font-medium text-zinc-600">
               Téléchargement... {Math.round(progress)}%
             </div>
-            <div className="w-48 h-2 bg-slate-200 rounded-full overflow-hidden">
+            <div className="w-48 h-2 bg-zinc-200 rounded-full overflow-hidden">
               <div 
-                className="h-full bg-indigo-500 transition-all duration-300" 
+                className="h-full bg-primary transition-all duration-300" 
                 style={{ width: `${progress}%` }}
               />
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center space-y-2 text-slate-500">
-            <UploadCloud className="w-10 h-10 text-slate-400" />
+          <div className="flex flex-col items-center space-y-2 text-zinc-500">
+            <UploadCloud className="w-10 h-10 text-zinc-400" />
             <p className="text-sm font-medium">
               Glissez votre PDF ici ou cliquez
             </p>
-            <p className="text-xs text-slate-400">PDF uniquement (max 10MB)</p>
+            <p className="text-xs text-zinc-400">PDF uniquement (max 10MB)</p>
           </div>
         )}
       </div>
