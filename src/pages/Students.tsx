@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, addDoc, setDoc, doc, serverTimestamp, where } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, setDoc, doc, serverTimestamp, where, deleteDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { StudentHealthBadge } from '../components/StudentHealthBadge';
 import { CsvImportWizard } from '../components/CsvImportWizard';
-import { Users, Plus, UserPlus, Search, Upload, Folder, Calendar, ChevronLeft, Settings } from 'lucide-react';
+import { Users, Plus, UserPlus, Search, Upload, Folder, Calendar, ChevronLeft, Settings, Trash2 } from 'lucide-react';
 import { formatFirstName, formatLastName } from '../lib/utils';
 
 interface ClassSchedule {
@@ -57,6 +57,7 @@ export function Students() {
 
   const [newClassName, setNewClassName] = useState('');
   const [isAddingClass, setIsAddingClass] = useState(false);
+  const [classToDelete, setClassToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -141,6 +142,26 @@ export function Students() {
     }
   };
 
+  const confirmDeleteClass = async () => {
+    if (!classToDelete || !auth.currentUser) return;
+    try {
+      // Delete classGroup document
+      const classGroup = classGroups.find(c => c.name === classToDelete);
+      if (classGroup) {
+        await deleteDoc(doc(db, 'classGroups', classGroup.id));
+      }
+      
+      // Delete all students in this class
+      const studentsToDelete = students.filter(s => s.classGroupId === classToDelete);
+      const deletePromises = studentsToDelete.map(s => deleteDoc(doc(db, 'students', s.id)));
+      await Promise.all(deletePromises);
+      
+      setClassToDelete(null);
+    } catch (error) {
+      console.error('Error deleting class:', error);
+    }
+  };
+
   const openScheduleModal = (className: string) => {
     const classGroup = classGroups.find(c => c.name === className);
     if (classGroup && classGroup.scheduleJson) {
@@ -184,8 +205,8 @@ export function Students() {
       dayOfWeek: 'Lundi', 
       startTime: '08:00',
       endTime: '10:00',
-      startDate: '',
-      endDate: '',
+      startWeek: 1,
+      endWeek: 52,
       apsa: sports[0]?.name || '',
       facilityId: facilities[0]?.id || ''
     }]);
@@ -417,13 +438,22 @@ export function Students() {
                     <p className="text-sm font-medium text-zinc-500">{classStudents.length} élèves</p>
                   </div>
                 </div>
-                <button 
-                  onClick={() => openScheduleModal(className)}
-                  className="p-2 text-zinc-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-colors"
-                  title="Gérer l'emploi du temps"
-                >
-                  <Calendar className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button 
+                    onClick={() => openScheduleModal(className)}
+                    className="p-2 text-zinc-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-colors"
+                    title="Gérer l'emploi du temps"
+                  >
+                    <Calendar className="w-5 h-5" />
+                  </button>
+                  <button 
+                    onClick={() => setClassToDelete(className)}
+                    className="p-2 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                    title="Supprimer la classe"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
               
               <div className="p-6 bg-zinc-50/50">
@@ -541,21 +571,27 @@ export function Students() {
                       <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Période</label>
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-zinc-400 text-xs font-medium w-6">Du</span>
+                          <span className="text-zinc-400 text-xs font-medium w-8">De S</span>
                           <input
-                            type="date"
-                            value={item.startDate || ''}
-                            onChange={(e) => updateScheduleItem(index, 'startDate', e.target.value)}
+                            type="number"
+                            min="1"
+                            max="52"
+                            value={item.startWeek || ''}
+                            onChange={(e) => updateScheduleItem(index, 'startWeek', parseInt(e.target.value, 10))}
                             className="w-full p-2.5 border border-zinc-300 rounded-xl bg-white text-sm font-medium shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            placeholder="1"
                           />
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-zinc-400 text-xs font-medium w-6">Au</span>
+                          <span className="text-zinc-400 text-xs font-medium w-8">à S</span>
                           <input
-                            type="date"
-                            value={item.endDate || ''}
-                            onChange={(e) => updateScheduleItem(index, 'endDate', e.target.value)}
+                            type="number"
+                            min="1"
+                            max="52"
+                            value={item.endWeek || ''}
+                            onChange={(e) => updateScheduleItem(index, 'endWeek', parseInt(e.target.value, 10))}
                             className="w-full p-2.5 border border-zinc-300 rounded-xl bg-white text-sm font-medium shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            placeholder="52"
                           />
                         </div>
                       </div>
@@ -605,6 +641,39 @@ export function Students() {
                 className="px-6 py-3 bg-zinc-900 text-white font-bold rounded-xl hover:bg-zinc-800 transition-colors shadow-lg shadow-zinc-900/20"
               >
                 Enregistrer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Class Confirmation Modal */}
+      {classToDelete && (
+        <div className="fixed inset-0 bg-zinc-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <h2 className="text-xl font-bold text-zinc-900 mb-2">Supprimer la classe</h2>
+              <p className="text-zinc-600">
+                Êtes-vous sûr de vouloir supprimer la classe <span className="font-bold">{classToDelete}</span> ? 
+                Cette action supprimera également tous les élèves associés à cette classe. 
+                Cette action est irréversible.
+              </p>
+            </div>
+            <div className="p-6 bg-zinc-50 border-t border-zinc-100 flex justify-end gap-3">
+              <button
+                onClick={() => setClassToDelete(null)}
+                className="px-4 py-2 text-sm font-medium text-zinc-700 bg-white border border-zinc-200 rounded-xl hover:bg-zinc-50 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={confirmDeleteClass}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors"
+              >
+                Supprimer
               </button>
             </div>
           </div>
