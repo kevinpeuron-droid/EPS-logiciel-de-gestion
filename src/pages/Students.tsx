@@ -542,6 +542,10 @@ export function Students() {
                       
                       const hasPeriods = item.periods && item.periods.length > 0;
                       
+                      const periodDisplay = item.startDate && item.endDate
+                        ? `Du ${formatDate(item.startDate)} au ${formatDate(item.endDate)}`
+                        : (item.period || (item.startWeek && item.endWeek ? `Semaines ${item.startWeek} à ${item.endWeek}` : ''));
+                      
                       return (
                         <li key={idx} className="flex flex-col text-sm border-b border-zinc-100 pb-3 last:border-0 last:pb-0">
                           <div className="flex items-center justify-between">

@@ -29,18 +29,33 @@ export function Sessions() {
   const [isLoadingCalendar, setIsLoadingCalendar] = useState(false);
   const [calendarError, setCalendarError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const storedToken = localStorage.getItem('googleCalendarToken');
+    const expiry = localStorage.getItem('googleCalendarTokenExpiry');
+    
+    if (storedToken && expiry && Date.now() < parseInt(expiry, 10)) {
+      setGoogleToken(storedToken);
+    } else {
+      localStorage.removeItem('googleCalendarToken');
+      localStorage.removeItem('googleCalendarTokenExpiry');
+    }
+  }, []);
+
   const connectGoogleCalendar = async () => {
     try {
       setIsLoadingCalendar(true);
       setCalendarError(null);
       const provider = new GoogleAuthProvider();
       provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
-      provider.setCustomParameters({ prompt: 'consent' }); // Force consent to ensure scope is granted
+      // Removed prompt: 'consent' so it doesn't ask for permission every time if already granted
       const result = await signInWithPopup(auth, provider);
       const credential = GoogleAuthProvider.credentialFromResult(result);
       const token = credential?.accessToken;
       if (token) {
         setGoogleToken(token);
+        localStorage.setItem('googleCalendarToken', token);
+        // Google tokens typically expire in 1 hour (3600 seconds). We use 3500 to be safe.
+        localStorage.setItem('googleCalendarTokenExpiry', (Date.now() + 3500 * 1000).toString());
       }
     } catch (error: any) {
       console.error('Error connecting to Google Calendar:', error);
@@ -72,6 +87,8 @@ export function Sessions() {
         if (!response.ok) {
           if (response.status === 401) {
             setGoogleToken(null); // Token expired
+            localStorage.removeItem('googleCalendarToken');
+            localStorage.removeItem('googleCalendarTokenExpiry');
             throw new Error("Session expirée, veuillez vous reconnecter.");
           }
           const errorData = await response.json().catch(() => null);
