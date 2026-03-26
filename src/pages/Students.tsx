@@ -230,29 +230,39 @@ export function Students() {
 
   const updateScheduleItem = (index: number, field: keyof ClassSchedule, value: any) => {
     const newSchedule = [...scheduleForm];
-    newSchedule[index][field] = value;
+    newSchedule[index] = { ...newSchedule[index], [field]: value };
     setScheduleForm(newSchedule);
   };
 
   const addPeriodToItem = (index: number) => {
     const newSchedule = [...scheduleForm];
-    if (!newSchedule[index].periods) newSchedule[index].periods = [];
-    newSchedule[index].periods!.push({ startWeek: 1, endWeek: 52 });
+    const item = { ...newSchedule[index] };
+    item.periods = [...(item.periods || [])];
+    item.periods.push({ startWeek: 1, endWeek: 52 });
+    newSchedule[index] = item;
     setScheduleForm(newSchedule);
   };
 
   const updateSchedulePeriod = (itemIndex: number, periodIndex: number, field: keyof SchedulePeriod, value: number) => {
     const newSchedule = [...scheduleForm];
-    if (newSchedule[itemIndex].periods) {
-      newSchedule[itemIndex].periods![periodIndex][field] = value;
+    const item = { ...newSchedule[itemIndex] };
+    if (item.periods) {
+      const newPeriods = [...item.periods];
+      newPeriods[periodIndex] = { ...newPeriods[periodIndex], [field]: value };
+      item.periods = newPeriods;
+      newSchedule[itemIndex] = item;
       setScheduleForm(newSchedule);
     }
   };
 
   const removePeriodFromItem = (itemIndex: number, periodIndex: number) => {
     const newSchedule = [...scheduleForm];
-    if (newSchedule[itemIndex].periods) {
-      newSchedule[itemIndex].periods!.splice(periodIndex, 1);
+    const item = { ...newSchedule[itemIndex] };
+    if (item.periods) {
+      const newPeriods = [...item.periods];
+      newPeriods.splice(periodIndex, 1);
+      item.periods = newPeriods;
+      newSchedule[itemIndex] = item;
       setScheduleForm(newSchedule);
     }
   };
@@ -609,13 +619,19 @@ export function Students() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pr-10">
                     <div className="md:col-span-1">
-                      <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center justify-between mb-2">
                         <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider">Périodes</label>
-                        <button type="button" onClick={() => addPeriodToItem(index)} className="text-xs text-primary-600 hover:text-primary-700 font-bold">+ Ajouter</button>
+                        <button 
+                          type="button" 
+                          onClick={() => addPeriodToItem(index)} 
+                          className="text-xs bg-primary-50 text-primary-600 hover:bg-primary-100 px-2 py-1 rounded-md font-bold transition-colors flex items-center gap-1"
+                        >
+                          <Plus className="w-3 h-3" /> Ajouter
+                        </button>
                       </div>
                       <div className="flex flex-col gap-2">
                         {item.periods?.map((period, pIdx) => (
-                          <div key={pIdx} className="flex items-center gap-2 relative group">
+                          <div key={pIdx} className="flex items-center gap-2">
                             <span className="text-zinc-400 text-xs font-medium w-8">De S</span>
                             <input
                               type="number"
@@ -635,8 +651,13 @@ export function Students() {
                               className="w-full p-2 border border-zinc-300 rounded-lg bg-white text-sm font-medium shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                             />
                             {item.periods!.length > 1 && (
-                              <button type="button" onClick={() => removePeriodFromItem(index, pIdx)} className="absolute -right-6 text-zinc-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                &times;
+                              <button 
+                                type="button" 
+                                onClick={() => removePeriodFromItem(index, pIdx)} 
+                                className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors shrink-0"
+                                title="Supprimer cette période"
+                              >
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             )}
                           </div>
