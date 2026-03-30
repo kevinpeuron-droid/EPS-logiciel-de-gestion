@@ -3,6 +3,7 @@ import { collection, query, onSnapshot, addDoc, setDoc, doc, serverTimestamp, wh
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { db, auth } from '../firebase';
 import { FileUpload } from '../components/FileUpload';
+import { TodoList } from '../components/TodoList';
 import { Plus, FileText, Calendar as CalendarIcon, MapPin, Clock, ChevronLeft, ChevronRight, Edit3, AlertCircle } from 'lucide-react';
 import { format, addDays, subDays, parseISO, isWithinInterval, startOfDay, endOfDay, getISOWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -285,8 +286,9 @@ export function Sessions() {
   dailySlots.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6">
-      {/* Sidebar - Google Calendar */}
+    <div className="space-y-6">
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Sidebar - Google Calendar */}
       <div className="w-full lg:w-80 shrink-0 space-y-4">
         <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden">
           <div className="p-4 border-b border-zinc-100 bg-zinc-50/50 flex items-center gap-3">
@@ -565,6 +567,12 @@ export function Sessions() {
           </div>
         </div>
       )}
+      </div>
+      </div>
+
+      {/* Todo List Section */}
+      <div className="mt-8">
+        <TodoList />
       </div>
     </div>
   );

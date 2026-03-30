@@ -179,6 +179,12 @@ service cloud.firestore {
              validStringLength('name', 1, 50);
     }
 
+    function isValidTask() {
+      return hasRequiredFields(['text', 'completed', 'teacherId']) &&
+             validStringLength('text', 1, 500) &&
+             request.resource.data.completed is bool;
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -229,6 +235,13 @@ service cloud.firestore {
       allow read: if isDocOwner();
       allow create: if isAuthenticated() && isValidFacilityUnavailableSlot() && teacherIdUnchanged();
       allow update: if isDocOwner() && isValidFacilityUnavailableSlot() && teacherIdNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /tasks/{taskId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidTask() && teacherIdUnchanged();
+      allow update: if isDocOwner() && isValidTask() && teacherIdNotModified();
       allow delete: if isDocOwner();
     }
   }

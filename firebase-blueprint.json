@@ -94,9 +94,25 @@
         "teacherId": { "type": "string" }
       },
       "required": ["name", "teacherId"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "A to-do list task",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "completed": { "type": "boolean" },
+        "teacherId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["text", "completed", "teacherId"]
     }
   },
   "firestore": {
+    "/tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/Task" },
+      "description": "To-do list tasks"
+    },
     "/sports/{sportId}": {
       "schema": { "$ref": "#/entities/Sport" },
       "description": "Sports collection"
