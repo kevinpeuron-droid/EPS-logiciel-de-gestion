@@ -43,7 +43,12 @@
           "type": "array",
           "items": { "type": "string" }
         },
-        "teacherId": { "type": "string" }
+        "teacherId": { "type": "string" },
+        "studentEvaluations": {
+          "type": "object",
+          "description": "Map of studentId to their evaluation ('bien', '-', '+')"
+        },
+        "nextSessionTitle": { "type": "string" }
       },
       "required": ["title", "date", "apsa", "classGroupId", "teacherId"]
     },

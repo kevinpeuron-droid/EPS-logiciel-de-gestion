@@ -7,12 +7,14 @@ import { TodoList } from '../components/TodoList';
 import { Plus, FileText, Calendar as CalendarIcon, MapPin, Clock, ChevronLeft, ChevronRight, Edit3, AlertCircle } from 'lucide-react';
 import { format, addDays, subDays, parseISO, isWithinInterval, startOfDay, endOfDay, getISOWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { formatFirstName, formatLastName } from '../lib/utils';
 
 const DAYS_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
 export function Sessions() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [sessions, setSessions] = useState<any[]>([]);
+  const [students, setStudents] = useState<any[]>([]);
   const [classGroups, setClassGroups] = useState<any[]>([]);
   const [sports, setSports] = useState<any[]>([]);
   const [facilities, setFacilities] = useState<any[]>([]);
@@ -21,7 +23,9 @@ export function Sessions() {
   const [sessionForm, setSessionForm] = useState({
     title: '',
     description: '',
-    pdfUrls: [] as string[]
+    pdfUrls: [] as string[],
+    studentEvaluations: {} as Record<string, string>,
+    nextSessionTitle: ''
   });
 
   // Google Calendar State
@@ -127,6 +131,15 @@ export function Sessions() {
       setSessions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
 
+    // Fetch students
+    const qStudents = query(
+      collection(db, 'students'),
+      where('teacherId', '==', auth.currentUser.uid)
+    );
+    const unsubStudents = onSnapshot(qStudents, (snapshot) => {
+      setStudents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
     // Fetch classGroups
     const qClasses = query(
       collection(db, 'classGroups'),
@@ -157,6 +170,7 @@ export function Sessions() {
     });
 
     return () => {
+      unsubStudents();
       unsubSessions();
       unsubClasses();
       unsubSports();
@@ -175,6 +189,8 @@ export function Sessions() {
       title: sessionForm.title,
       description: sessionForm.description,
       pdfUrls: sessionForm.pdfUrls,
+      studentEvaluations: sessionForm.studentEvaluations,
+      nextSessionTitle: sessionForm.nextSessionTitle,
       date: dateStr,
       classGroupId: editingSlot.className,
       apsa: editingSlot.apsa,
@@ -194,7 +210,7 @@ export function Sessions() {
         });
       }
       setEditingSlot(null);
-      setSessionForm({ title: '', description: '', pdfUrls: [] });
+      setSessionForm({ title: '', description: '', pdfUrls: [], studentEvaluations: {}, nextSessionTitle: '' });
     } catch (error) {
       console.error('Error saving session:', error);
     }
@@ -206,15 +222,51 @@ export function Sessions() {
       setSessionForm({
         title: slot.existingSession.title || '',
         description: slot.existingSession.description || '',
-        pdfUrls: slot.existingSession.pdfUrls || []
+        pdfUrls: slot.existingSession.pdfUrls || [],
+        studentEvaluations: slot.existingSession.studentEvaluations || {},
+        nextSessionTitle: slot.existingSession.nextSessionTitle || ''
       });
     } else {
+      // Find previous session for this class and apsa to pre-fill the title
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const pastSessions = sessions
+        .filter(s => s.classGroupId === slot.className && s.apsa === slot.apsa && s.date <= dateStr)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      
+      const prevSession = pastSessions.length > 0 ? pastSessions[0] : null;
+      const defaultTitle = prevSession?.nextSessionTitle || '';
+
       setSessionForm({
-        title: '',
+        title: defaultTitle,
         description: '',
-        pdfUrls: []
+        pdfUrls: [],
+        studentEvaluations: {},
+        nextSessionTitle: ''
       });
     }
+  };
+
+  const getStudentScore = (studentId: string) => {
+    let score = 50;
+    // Add scores from all saved sessions EXCEPT the one currently being edited
+    sessions.forEach(s => {
+      if (editingSlot?.existingSession?.id === s.id) return;
+      const evalVal = s.studentEvaluations?.[studentId];
+      if (evalVal === '+') score += 5;
+      if (evalVal === '-') score -= 5;
+    });
+    // Add score from current form
+    const currentEval = sessionForm.studentEvaluations[studentId];
+    if (currentEval === '+') score += 5;
+    if (currentEval === '-') score -= 5;
+    return Math.max(0, Math.min(100, score));
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score < 25) return 'text-red-600';
+    if (score < 50) return 'text-orange-500';
+    if (score < 75) return 'text-green-600';
+    return 'text-blue-600';
   };
 
   // Generate daily schedule
@@ -523,6 +575,17 @@ export function Sessions() {
               </div>
 
               <div>
+                <label className="block text-sm font-bold text-zinc-700 mb-1.5">Titre de la prochaine séance (optionnel)</label>
+                <input
+                  type="text"
+                  className="w-full p-3 border border-zinc-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm"
+                  value={sessionForm.nextSessionTitle}
+                  onChange={(e) => setSessionForm({ ...sessionForm, nextSessionTitle: e.target.value })}
+                  placeholder="Ex: Évaluation finale, Cycle 1 Séance 4..."
+                />
+              </div>
+
+              <div>
                 <label className="block text-sm font-bold text-zinc-700 mb-2">Documents joints (PDF)</label>
                 <FileUpload
                   onUploadComplete={(url, name) => {
@@ -546,6 +609,67 @@ export function Sessions() {
                     ))}
                   </div>
                 )}
+              </div>
+
+              <div className="pt-4 border-t border-zinc-100">
+                <label className="block text-sm font-bold text-zinc-700 mb-4">Évaluation de l'activité des élèves</label>
+                <div className="space-y-3">
+                  {students.filter(s => s.classGroupId === editingSlot.className).sort((a, b) => (a.lastName || '').localeCompare(b.lastName || '')).map(student => (
+                    <div key={student.id} className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center font-bold text-xs shrink-0">
+                          {formatLastName(student.lastName)?.[0]}{formatFirstName(student.firstName)?.[0]}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-zinc-900 text-sm line-clamp-1">
+                            {formatLastName(student.lastName)} {formatFirstName(student.firstName)}
+                          </span>
+                          <span className="text-xs font-bold text-zinc-500">
+                            Score: <span className={getScoreColor(getStudentScore(student.id))}>{getStudentScore(student.id)}</span>
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setSessionForm(prev => ({
+                            ...prev,
+                            studentEvaluations: { ...prev.studentEvaluations, [student.id]: '-' }
+                          }))}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold transition-colors ${sessionForm.studentEvaluations[student.id] === '-' ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-white text-zinc-400 border border-zinc-200 hover:bg-zinc-100'}`}
+                          title="Pas bien"
+                        >
+                          -
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSessionForm(prev => ({
+                            ...prev,
+                            studentEvaluations: { ...prev.studentEvaluations, [student.id]: 'bien' }
+                          }))}
+                          className={`px-3 h-8 rounded-lg flex items-center justify-center font-bold text-xs transition-colors ${(!sessionForm.studentEvaluations[student.id] || sessionForm.studentEvaluations[student.id] === 'bien') ? 'bg-zinc-800 text-white border border-zinc-900' : 'bg-white text-zinc-400 border border-zinc-200 hover:bg-zinc-100'}`}
+                          title="Bien (Défaut)"
+                        >
+                          Bien
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSessionForm(prev => ({
+                            ...prev,
+                            studentEvaluations: { ...prev.studentEvaluations, [student.id]: '+' }
+                          }))}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold transition-colors ${sessionForm.studentEvaluations[student.id] === '+' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-white text-zinc-400 border border-zinc-200 hover:bg-zinc-100'}`}
+                          title="Très bien"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {students.filter(s => s.classGroupId === editingSlot.className).length === 0 && (
+                    <p className="text-sm text-zinc-500 italic">Aucun élève dans cette classe.</p>
+                  )}
+                </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-6 border-t border-zinc-100">

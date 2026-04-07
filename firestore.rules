@@ -148,7 +148,9 @@ service cloud.firestore {
              isValidDateString(request.resource.data.date) &&
              validStringLength('apsa', 1, 50) &&
              validStringLength('classGroupId', 1, 50) &&
-             isValidStringList('pdfUrls', 10, 500);
+             isValidStringList('pdfUrls', 10, 500) &&
+             (!('studentEvaluations' in request.resource.data) || request.resource.data.studentEvaluations is map) &&
+             isValidOptionalString('nextSessionTitle', 0, 100);
     }
 
     function isValidEvaluation() {
